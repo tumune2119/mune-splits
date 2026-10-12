@@ -1,7 +1,14 @@
 {
   "name": "mune-splits",
   "version": "0.1.0",
+  "description": "Local-first expense splitter: log who paid for what and settle up with the fewest payments.",
+  "license": "MIT",
   "private": true,
+  "homepage": "https://github.com/tumune2119/mune-splits",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tumune2119/mune-splits.git"
+  },
   "scripts": {
     "dev": "next dev -p 5175 -H 127.0.0.1",
     "build": "next build",
@@ -11,7 +18,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "package:win": "node scripts/package-windows.mjs"
   },
   "dependencies": {
     "better-sqlite3": "12.9.0",

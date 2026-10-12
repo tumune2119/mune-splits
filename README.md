@@ -1,96 +1,131 @@
-# MUNE Splits
+<p align="center">
+  <img src="public/icons/icon.svg" width="72" alt="MUNE Splits logo">
+</p>
 
-A local-first expense splitter, sibling to **MUNE TASKS**. Create an event or trip, add the people, log who paid for what, and MUNE Splits works out who owes whom, using the fewest possible payments to settle everyone up.
+<h1 align="center">MUNE Splits</h1>
 
-Everything stays on your computer. Data lives in a local SQLite file, the server only listens on `127.0.0.1`, and there are no accounts, cloud sync or tracking.
+<p align="center">
+  Split trip and event expenses with friends. It works out who owes whom, and the fewest payments to settle up.<br>
+  Local-first: your data never leaves your computer. No accounts, no cloud, no tracking.
+</p>
 
-## Prerequisites
+<p align="center">
+  <a href="https://github.com/tumune2119/mune-splits/releases/latest"><b>⬇ Download for Windows</b></a>
+  &nbsp;·&nbsp; <a href="#run-from-source-windows-macos-linux">Run from source</a>
+  &nbsp;·&nbsp; <a href="docs/sample-report.pdf">Sample PDF report</a>
+  &nbsp;·&nbsp; MIT licensed
+</p>
 
-- **Node.js 20 or newer** (the current LTS is recommended). Check with `node -v`.
-- Chrome or Edge, if you want the app to open in its own window.
+![Event overview](docs/screenshots/overview.png)
 
-## Run it
+## What it does
 
-### The easy way: double-click
+- **Events and trips:** a name, dates, currency, icon and colour. Filter by Active, Settled or Archived.
+- **People:** a reusable list of friends. They're just names, with no sign-ups.
+- **Expenses with four ways to split:**
+  - **Equal:** tick who shares it.
+  - **Shares:** a weight per person for that expense. `2` counts as two people (someone with their partner), `½` is a half portion, `0` leaves someone out. You see each person's amount as you type.
+  - **Exact:** enter each amount. Saving is blocked until they add up.
+  - **Percent:** must total 100%.
+  - Plus **multiple payers** on one expense, notes, and receipt photos.
+- **Balances:** see who owes whom as the fewest possible payments, or switch to the raw debts.
+- **Settle up:** one click on **Mark as paid**, partial payments, undo, then lock the event as **Settled**.
+- **Share it:** a polished **PDF report** ([example](docs/sample-report.pdf)), a print view, a WhatsApp-ready text summary, or CSV.
+- **Dark mode by default** with a light theme, installable as an app, and it works offline.
 
-- **`Start MUNE Splits.bat`** installs dependencies on first run, builds the app (again whenever the source changes), starts it on **http://127.0.0.1:5174**, and opens it as a Chrome/Edge app window. Port 5174 means it never clashes with MUNE TASKS on 3777.
-- **`launch-mune-splits.vbs`** does the same without a console window. The console only appears when an install or rebuild is needed. Server logs go to `logs\server.log`.
-- **Desktop shortcut (recommended):** right-click `create-shortcut.ps1` and choose *Run with PowerShell*, or run:
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File .\create-shortcut.ps1
-  ```
+| Weighted split | Settle up | Light mode |
+| --- | --- | --- |
+| ![Weighted split](docs/screenshots/weighted-split.png) | ![Settle up](docs/screenshots/settle-up.png) | ![Light mode](docs/screenshots/light-mode.png) |
 
-**Closing:** close the MUNE Splits window or click **Quit MUNE Splits** in the sidebar. The server stops by itself about 5 seconds after the last window closes. Reloading the window doesn't stop it. If MUNE Splits is already running, the launcher just opens another window.
+## Install on Windows (for friends: no setup needed)
 
-### From a terminal
+1. Download **`MUNE-Splits-<version>-windows-x64.zip`** from the [latest release](https://github.com/tumune2119/mune-splits/releases/latest).
+2. Right-click the zip, choose **Extract All…**, and open the extracted folder.
+3. Double-click **`Install MUNE Splits.cmd`**.
+   If Windows says *"Windows protected your PC"*, click **More info → Run anyway**. The app isn't signed with a paid certificate, but all the code is here to read.
+4. MUNE Splits opens in its own window. You'll also have a desktop and Start menu shortcut.
+
+Nothing else to install: Node.js comes bundled, and no admin rights are needed. To see how it works, try **Settings → Load demo trip**.
+
+- **Update:** download the new zip and run `Install MUNE Splits.cmd` again. Your data is kept.
+- **Uninstall:** **Settings → Apps → MUNE Splits → Uninstall**. You'll be asked whether to keep your data.
+- **Closing:** close the window or click **Quit MUNE Splits**. The app stops in the background by itself.
+
+## Your data
+
+Everything is stored on your computer:
+
+| | Installed app | Running from source |
+| --- | --- | --- |
+| Database | `%APPDATA%\MUNE Splits\mune-splits.db` | `data/mune-splits.db` |
+| Receipts | `%APPDATA%\MUNE Splits\receipts\` | `data/receipts/` |
+
+Set `MUNE_SPLITS_DATA_DIR` to store it somewhere else. The server only listens on `127.0.0.1` and rejects requests from other websites.
+
+**Backup:** **Settings → Export all data (JSON)** saves everything, including receipts. **Import backup** restores it, either merged with your current data or replacing it. A single event can also be exported as CSV from its ⋯ menu.
+
+> Avoid keeping the live database in a synced folder (OneDrive, Dropbox) while the app is running: sync tools can conflict with SQLite. Use JSON backups instead.
+
+## Run from source (Windows, macOS, Linux)
+
+You need **Node.js 20** (22/24 also work after updating `better-sqlite3`, see below).
 
 ```bash
+git clone https://github.com/tumune2119/mune-splits.git
+cd mune-splits
 npm install
-npm run dev        # development, http://127.0.0.1:5175 (hot reload)
-npm run build      # production build
-npm run preview    # serve the production build on http://127.0.0.1:5174
-npm test           # split/settle engine unit tests (Vitest)
+npm run build
+npm run preview      # → http://127.0.0.1:5174
 ```
 
-`npm run dev` and `npm run preview` don't stop on their own (there's no Quit button). Stop them with Ctrl+C.
+For development, run `npm run dev` (port 5175, hot reload) and `npm test` (the split engine's unit tests).
 
-## Using it
+On Windows you can also double-click **`Start MUNE Splits.bat`** in the repo. It installs dependencies, builds when the source changes, starts the server and opens an app window. `launch-mune-splits.vbs` does the same without a console window, and `create-shortcut.ps1` adds a desktop shortcut for it. Started this way, the server stops when you close the window.
 
-- **Events:** name, dates, currency, an icon and colour. Filter by Active, Settled, Archived or All. Press **N** to create one.
-- **People:** a reusable list of your regulars. Pick them when creating an event, or add new names on the spot. They're just labels.
-- **Add expense** (floating button, or **N** on an event page): amount first, then title, date, category, who paid (one person or **multiple payers** with an amount each) and how to split it:
-  - **Equal:** tick who shares it.
-  - **Shares:** a weight per person *for this expense only*. Use `½`, `1`, `2` or any number: `2` counts as two people, `0.5` as a half portion, `0` leaves them out. Each person's amount updates as you type.
-  - **Exact:** type each amount. Saving is blocked until they add up. Double-click a box to fill in what's left.
-  - **Percent:** must total 100%.
-  - Optional notes and a receipt photo or PDF, stored locally.
-- **Balances:** each person's paid, share and net balance, plus who owes whom. Toggle between **Simplified** (fewest payments) and **Raw** (direct debts from each expense).
-- **Settle up:** suggested payments ("Priya pays You ₹14,186.50"). Use **Mark as paid**, or **Partial…** for part-payments, or record any other payment. Every payment can be undone. When everyone is at zero, **Mark event as settled** locks the event as read-only. You can reopen it from the banner or the ⋯ menu.
-- **Export PDF** (event header): a shareable report with summary cards, who owes whom (paid/unpaid), the category breakdown, every expense with each person's share and weights ("Priya ×2, Rohan ×0.5, others ×1"), and the settlement history. It saves as `MUNE-Splits_<event>_<date>.pdf`. The ⋯ menu also has **Print view** (browser print / Save as PDF), **Copy summary** (plain text for WhatsApp) and **Export CSV**.
-- **Settings:** your name, default currency, number format, light/dark theme, categories (their order sets their chart colour), backup/restore, **Load demo trip** and **Clear all data**.
-
-Not sure about the maths? **Settings → Load demo trip** (also on the empty home screen) creates "Goa Trip" with 4 people, weighted shares (Priya ×2, Rohan ×0.5), a multi-payer villa, every split mode and a partial settlement.
+**Install as an app (PWA):** with the app open in Chrome or Edge, use the install icon in the address bar. The local server still needs to be running.
 
 ## How the maths works
 
-- All amounts are stored as **integer minor units** (paise/cents), so there are no floating-point errors.
-- Shares are `amount × weight / sum(weights)`. Leftover paise go to the largest remainders (ties by order), so shares always add up exactly to the total.
+- Money is stored as **integer minor units** (paise or cents), so no floating-point errors creep in.
+- A share is `amount × weight ÷ sum of weights`. Leftover paise go to the largest remainders, so shares always add up exactly to the total.
 - **Net balance** = paid − share + payments sent − payments received.
-- **Simplify debts:** greedily match the largest creditor with the largest debtor until everyone is at zero. This takes at most *people − 1* payments.
-- The engine is a pure module, `src/lib/splits.ts`, covered by `src/lib/splits.test.ts`: equal, weighted with decimals, exact, percent, multi-payer, rounding remainders, partial settlements and the 5,000 / 2,000 example.
+- **Simplifying debts:** repeatedly match the largest creditor with the largest debtor. That takes at most *people − 1* payments. For example, if you paid ₹5,000 and a friend paid ₹2,000 for shared costs, that's one ₹1,500 payment, not two opposite debts.
 
-## Where your data is stored
+The engine is a pure, framework-free module, [`src/lib/splits.ts`](src/lib/splits.ts), with tests in [`src/lib/splits.test.ts`](src/lib/splits.test.ts).
 
-| What | Where |
-| --- | --- |
-| Database | `data\mune-splits.db` (SQLite) |
-| Receipts | `data\receipts\` |
-| Server log (launcher) | `logs\server.log` |
+## Building a Windows release
 
-To keep data somewhere else, set `MUNE_SPLITS_DATA_DIR` to a folder before starting.
+```bash
+npm run package:win   # → release/MUNE-Splits-<version>-windows-x64.zip
+```
 
-> This folder is inside OneDrive. OneDrive syncing a live SQLite database can occasionally conflict. If that happens, pause syncing while MUNE Splits runs, or point `MUNE_SPLITS_DATA_DIR` at a folder outside OneDrive and rely on JSON backups.
+This runs a standalone Next.js build (into `.next-release/`, separate from the normal build) and bundles the Node.js runtime you ran it with, plus the installer scripts from [`packaging/windows`](packaging/windows). Run it on 64-bit Windows with Node 20, because the bundled `better-sqlite3` binary has to match that Node version. Then attach the zip to a GitHub release:
 
-## Backup and restore
-
-- **Settings → Export all data (JSON)** downloads everything: events, people, payments, settings and receipt images.
-- **Settings → Import backup** restores a backup. **Merge** keeps current data (events with the same id are replaced); **Replace everything** wipes first.
-- **Event ⋯ menu → Export CSV** exports one event for spreadsheets.
-- To copy the raw database by hand, stop MUNE Splits first, then copy the `data` folder.
-
-## Install as a desktop app (PWA)
-
-Start MUNE Splits with the launcher, then in its window open the browser menu and choose **Install MUNE Splits** (or click the install icon in the address bar). The installed app still needs the local server running, so start it with the launcher or shortcut first. No internet connection is needed.
+```bash
+gh release create v0.1.0 release/MUNE-Splits-0.1.0-windows-x64.zip --title "MUNE Splits 0.1.0"
+```
 
 ## Tech
 
-Same stack as MUNE TASKS: Next.js 16 (App Router) + React 19 + TypeScript, Tailwind CSS 4 with design tokens as CSS variables, shadcn/ui-style components (Radix), SQLite via `better-sqlite3`, Recharts, jsPDF + jspdf-autotable (with embedded Inter, so ₹ renders), and Vitest.
+Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Radix and shadcn/ui-style components, SQLite via `better-sqlite3`, Recharts, jsPDF and jspdf-autotable (with the embedded Inter font, so ₹ and other symbols render), and Vitest.
 
-- `src/lib/splits.ts`: split and settle engine (pure)
-- `src/lib/event-math.ts`: balances, transfers and totals per event (shared by the UI, PDF and CSV)
-- `src/lib/store.ts`: all database reads and writes. Every event edit is one typed action (`src/lib/event-actions.ts`) sent to `PATCH /api/events/[id]`.
-- `src/lib/pdf.ts`: PDF report
-- `src/proxy.ts`: rejects foreign `Host` headers and cross-site writes, so other websites can't drive your local server
-- `scripts/`: launcher helpers and `npm run icons` (regenerates `public/icons` from the logo)
+| Path | What's there |
+| --- | --- |
+| `src/lib/splits.ts` | split and settle engine (pure) |
+| `src/lib/event-math.ts` | per-event balances, transfers and totals (shared by the UI, PDF and CSV) |
+| `src/lib/store.ts` | all database reads and writes. Every event edit is one typed action (`src/lib/event-actions.ts`) sent to `PATCH /api/events/[id]` |
+| `src/lib/pdf.ts` | the PDF report |
+| `src/proxy.ts` | blocks foreign `Host` headers and cross-site writes |
+| `packaging/windows/` | installer, launcher and uninstaller for the release zip |
 
-`better-sqlite3` is pinned to `12.9.0`, which ships prebuilt binaries for Node 20 (same as MUNE TASKS).
+`better-sqlite3` is pinned to `12.9.0` because it ships prebuilt binaries for Node 20. On Node 22 or 24, upgrade it to the latest version.
+
+MUNE Splits is a sibling of MUNE TASKS and shares its look and launcher style.
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a PR, run `npm test`, `npm run typecheck` and `npm run lint`.
+
+## License
+
+[MIT](LICENSE). The Inter font is under the SIL Open Font License ([`public/fonts/Inter-OFL.txt`](public/fonts/Inter-OFL.txt)). The Windows release bundles Node.js under its own license (`node\LICENSE` in the zip).

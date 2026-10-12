@@ -1,0 +1,31 @@
+MUNE Splits - split trip and event expenses with friends
+=========================================================
+
+INSTALL (Windows 10/11, no admin rights, nothing else to install)
+
+  1. Extract this zip (right-click > Extract All...). Don't run it from inside the zip.
+  2. Double-click "Install MUNE Splits.cmd".
+     If Windows shows "Windows protected your PC", click "More info" > "Run anyway".
+     (The app isn't signed with a paid certificate; the source is public on GitHub.)
+  3. MUNE Splits opens in its own window, and you get a desktop + Start menu shortcut.
+
+  You can delete the extracted folder afterwards.
+
+USING IT
+
+  - Everything is stored on YOUR computer only: %APPDATA%\MUNE Splits
+    No accounts, no cloud, no tracking.
+  - Closing the MUNE Splits window stops it. Open it again from the shortcut.
+  - Try Settings > "Load demo trip" to see how it works.
+  - Back up with Settings > "Export all data (JSON)".
+
+UPDATING
+
+  Download the new zip and run "Install MUNE Splits.cmd" again. Your data is kept.
+
+UNINSTALLING
+
+  Settings > Apps > MUNE Splits > Uninstall. You'll be asked whether to keep your data.
+
+Source code, help and new versions: https://github.com/tumune2119/mune-splits
+License: MIT (see LICENSE). Bundles Node.js (MIT, see node\LICENSE) and the Inter font (OFL).

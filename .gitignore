@@ -46,3 +46,7 @@ next-env.d.ts
 !.env.example
 /logs/
 
+
+# release builds
+/.next-release/
+/release/
