@@ -45,7 +45,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider delayDuration={300}>
             <AppShell>{children}</AppShell>
           </TooltipProvider>
-          <Toaster position="bottom-right" richColors closeButton />
+          {/* On phones, keep notices above the bottom navigation bar. */}
+          <Toaster position="bottom-right" richColors closeButton mobileOffset={{ bottom: "calc(84px + env(safe-area-inset-bottom))" }} />
         </AppProvider>
       </body>
     </html>
