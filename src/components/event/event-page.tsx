@@ -41,7 +41,10 @@ import { OverviewTab } from "@/components/event/overview-tab";
 import { ExpensesTab } from "@/components/event/expenses-tab";
 import { BalancesTab } from "@/components/event/balances-tab";
 import { SettleTab } from "@/components/event/settle-tab";
-import { deleteEventRequest, download, patchEvent } from "@/lib/client/api";
+import { deleteEventRequest, patchEvent } from "@/lib/client/api";
+import { backend } from "@/lib/client/backend";
+import { saveText, shareText } from "@/lib/client/platform";
+import { fileSafe } from "@/lib/format";
 import { eventMath } from "@/lib/event-math";
 import { formatRange, formatTimestamp } from "@/lib/format";
 import { summaryText } from "@/lib/summary-text";
@@ -60,7 +63,7 @@ export type Tab = (typeof TABS)[number]["value"];
 export function EventPage({ initial, people }: { initial: EventDetail; people: Person[] }) {
   const router = useRouter();
   const params = useSearchParams();
-  const { settings, fmt } = useApp();
+  const { settings, fmt, info } = useApp();
   const [event, setEvent] = useState(initial);
   const math = useMemo(() => eventMath(event), [event]);
   const [tab, setTabState] = useState<Tab>(() => (TABS.some((t) => t.value === params.get("tab")) ? (params.get("tab") as Tab) : "overview"));
@@ -158,10 +161,20 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
 
   const copySummary = async () => {
     try {
-      await navigator.clipboard.writeText(summaryText(event, math, (v) => fmt(v, event.currency), settings.locale));
-      toast.success("Summary copied. Paste it into WhatsApp.");
+      const how = await shareText(summaryText(event, math, (v) => fmt(v, event.currency), settings.locale));
+      if (how === "copied") toast.success("Summary copied. Paste it into WhatsApp.");
     } catch {
-      toast.error("Couldn't access the clipboard.");
+      toast.error("Couldn't share the summary.");
+    }
+  };
+
+  const exportCsv = async () => {
+    try {
+      const csv = await (await backend()).eventCsv(event.id);
+      // The BOM makes Excel read the file as UTF-8 (₹, names with accents).
+      await saveText(String.fromCharCode(0xfeff) + csv, `MUNE-Splits_${fileSafe(event.name)}_${new Date().toLocaleDateString("sv-SE")}.csv`, "text/csv");
+    } catch (err) {
+      toast.error((err as Error).message);
     }
   };
 
@@ -203,7 +216,7 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
             <AvatarStack people={event.participants} max={5} size={26} />
             <UserPlus className="size-4 text-muted-foreground" />
           </button>
-          <Button variant="outline" className="h-10 rounded-xl" onClick={exportPdf} disabled={exporting}>
+          <Button variant="outline" className="h-10 rounded-xl" onClick={exportPdf} disabled={exporting} aria-label="Export PDF">
             {exporting ? <Loader2 className="animate-spin" /> : <FileDown />}
             <span className="hidden sm:inline">Export PDF</span>
           </Button>
@@ -218,12 +231,14 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
                 <Pencil /> Edit details
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={copySummary}>
-                <ClipboardCopy /> Copy summary
+                <ClipboardCopy /> {info.platform === "desktop" ? "Copy summary" : "Share summary"}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => window.open(`/events/${event.id}/print`, "_blank")}>
-                <Printer /> Print view
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => download(`/api/events/${event.id}/csv`)}>
+              {!info.native && (
+                <DropdownMenuItem onSelect={() => window.open(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/event/print?id=${encodeURIComponent(event.id)}`, "_blank")}>
+                  <Printer /> Print view
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onSelect={exportCsv}>
                 <FileSpreadsheet /> Export CSV
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -249,7 +264,6 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
                   await deleteEventRequest(event.id);
                   toast.success("Event deleted");
                   router.push("/");
-                  router.refresh();
                 }}
               >
                 <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
@@ -273,7 +287,7 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
         </div>
       )}
 
-      <nav className="no-print sticky top-0 z-20 -mx-4 mt-6 border-b border-border bg-background/85 px-4 backdrop-blur-xl sm:-mx-8 sm:px-8">
+      <nav className="no-print sticky top-[env(safe-area-inset-top)] z-20 -mx-4 mt-6 border-b border-border bg-background/85 px-4 backdrop-blur-xl sm:-mx-8 sm:px-8">
         <div className="flex gap-1 overflow-x-auto" role="tablist">
           {TABS.map((t) => (
             <button

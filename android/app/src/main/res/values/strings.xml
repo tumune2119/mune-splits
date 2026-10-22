@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MUNE Splits</string>
+    <string name="title_activity_main">MUNE Splits</string>
+    <string name="package_name">io.github.tumune2119.munesplits</string>
+    <string name="custom_url_scheme">io.github.tumune2119.munesplits</string>
+</resources>

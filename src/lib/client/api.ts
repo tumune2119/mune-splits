@@ -1,54 +1,53 @@
 "use client";
 
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { backend, invalidate, onInvalidate, type Backend } from "./backend";
 import type { EventAction, NewEvent } from "../event-actions";
-import type { AppSettings, EventDetail } from "../types";
+import type { AppSettings } from "../types";
 
-async function json<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
-    throw new Error(err?.error ?? `Request failed (${res.status})`);
-  }
-  return res.status === 204 ? (undefined as T) : res.json();
+/** Shorthands for screens. Writes call invalidate() so other mounted screens reload. */
+const changed = async <T>(p: Promise<T>) => {
+  const r = await p;
+  invalidate();
+  return r;
+};
+export const patchEvent = async (id: string, action: EventAction) => changed((await backend()).patchEvent(id, action));
+export const createEventRequest = async (data: NewEvent) => changed((await backend()).createEvent(data));
+export const deleteEventRequest = async (id: string) => changed((await backend()).deleteEvent(id));
+export const patchSettings = async (data: Partial<AppSettings>) => (await backend()).patchSettings(data);
+export const loadDemo = async () => changed((await backend()).loadDemo());
+export const uploadReceipt = async (file: File) => (await backend()).uploadReceipt(file);
+export async function mutate<T>(fn: (b: Backend) => Promise<T>): Promise<T> {
+  return changed(fn(await backend()));
 }
 
-export function send<T>(url: string, body?: unknown, method = "POST"): Promise<T> {
-  return fetch(url, {
-    method,
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  }).then((r) => json<T>(r));
-}
+/**
+ * Loads data through the backend and reloads it whenever something changes (see invalidate()).
+ * `data` is undefined while the first load is in flight.
+ */
+export function useData<T>(load: (b: Backend) => Promise<T>, deps: unknown[] = []) {
+  const [data, setData] = useState<T>();
+  const [error, setError] = useState<Error | null>(null);
+  const loadRef = useRef(load);
+  // Always call the latest loader; layout effects run before the load effect below.
+  useLayoutEffect(() => {
+    loadRef.current = load;
+  });
 
-export const patchEvent = (id: string, action: EventAction) => send<EventDetail>(`/api/events/${id}`, action, "PATCH");
-export const createEventRequest = (data: NewEvent) => send<EventDetail>("/api/events", data);
-export const deleteEventRequest = (id: string) => send<void>(`/api/events/${id}`, undefined, "DELETE");
-export const patchSettings = (data: Partial<AppSettings>) => send<AppSettings>("/api/settings", data, "PATCH");
-export const loadDemo = () => send<{ id: string }>("/api/demo");
+  const reload = useCallback(() => {
+    let alive = true;
+    backend()
+      .then((b) => loadRef.current(b))
+      .then((d) => alive && (setData(d), setError(null)))
+      .catch((e) => alive && setError(e as Error));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-export async function uploadReceipt(file: File): Promise<string> {
-  const form = new FormData();
-  form.append("file", file);
-  const res = await fetch("/api/receipts", { method: "POST", body: form });
-  return (await json<{ name: string }>(res)).name;
-}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => reload(), [reload, ...deps]);
+  useEffect(() => onInvalidate(() => void reload()), [reload]);
 
-/** Starts a browser download of a URL (same-origin endpoints that send Content-Disposition). */
-export function download(url: string) {
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
-export function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  return { data, error, reload, setData };
 }

@@ -10,6 +10,8 @@ import { describeSplit, eventMath, payersLabel } from "./event-math";
 import { formatMoney } from "./money";
 import { fileSafe, formatDate, formatRange } from "./format";
 import { SERIES, SPLIT_MODE_LABELS, categoryColor } from "./constants";
+import { asset } from "./client/backend";
+import { saveFile } from "./client/platform";
 import type { AppSettings, EventDetail } from "./types";
 
 const INK = "#17171A";
@@ -35,7 +37,7 @@ async function loadFonts() {
     for (let i = 0; i < buf.length; i += 0x8000) binary += String.fromCharCode(...buf.subarray(i, i + 0x8000));
     return btoa(binary);
   };
-  fontCache ??= Promise.all([toBase64("/fonts/Inter-Regular.ttf"), toBase64("/fonts/Inter-SemiBold.ttf")]).then(([regular, bold]) => ({ regular, bold }));
+  fontCache ??= Promise.all([toBase64(asset("/fonts/Inter-Regular.ttf")), toBase64(asset("/fonts/Inter-SemiBold.ttf"))]).then(([regular, bold]) => ({ regular, bold }));
   return fontCache;
 }
 
@@ -45,7 +47,8 @@ const plain = (s: string) => s.replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1
 export async function exportEventPdf(event: EventDetail, settings: AppSettings) {
   const doc = await buildEventPdf(event, settings);
   const stamp = new Date().toLocaleDateString("sv-SE");
-  doc.save(`MUNE-Splits_${fileSafe(event.name)}_${stamp}.pdf`);
+  // Download on desktop; share sheet (save to Files, WhatsApp, …) on phones.
+  await saveFile(doc.output("blob"), `MUNE-Splits_${fileSafe(event.name)}_${stamp}.pdf`);
 }
 
 export async function buildEventPdf(event: EventDetail, settings: AppSettings): Promise<jsPDF> {

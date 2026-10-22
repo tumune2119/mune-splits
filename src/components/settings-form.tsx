@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, NativeSelect, Segmented, inputClass } from "@/components/fields";
 import { useApp } from "@/components/app-provider";
-import { download, loadDemo, patchSettings, send } from "@/lib/client/api";
+import { loadDemo, mutate, patchSettings } from "@/lib/client/api";
+import { backend, invalidate } from "@/lib/client/backend";
+import { saveText } from "@/lib/client/platform";
 import { CURRENCIES, LOCALES, formatMoney } from "@/lib/money";
 import { DEFAULT_CATEGORIES, SERIES, SERIES_OVERFLOW } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -16,7 +18,7 @@ import type { AppSettings, Category } from "@/lib/types";
 
 export function SettingsForm({ dataPath }: { dataPath: string }) {
   const router = useRouter();
-  const { settings, setSettings, theme } = useApp();
+  const { settings, setSettings, theme, info } = useApp();
   const [name, setName] = useState(settings.myName);
   const [categories, setCategories] = useState<Category[]>(settings.categories);
   const [busy, setBusy] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
       const next = await patchSettings(patch);
       setSettings(next);
       toast.success(success);
-      router.refresh();
+      invalidate();
       return next;
     } catch (err) {
       toast.error((err as Error).message);
@@ -150,7 +152,14 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
 
         <Section title="Backup & data">
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="rounded-xl" onClick={() => download("/api/backup")}>
+            <Button variant="outline" className="rounded-xl" onClick={async () => {
+                try {
+                  const data = await (await backend()).exportBackup();
+                  await saveText(JSON.stringify(data, null, 2), `mune-splits-backup-${new Date().toLocaleDateString("sv-SE")}.json`, "application/json");
+                } catch (err) {
+                  toast.error((err as Error).message);
+                }
+              }}>
               <Download /> Export all data (JSON)
             </Button>
             <Button variant="outline" className="rounded-xl" onClick={() => fileRef.current?.click()}>
@@ -179,9 +188,8 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
               onClick={async () => {
                 setBusy("demo");
                 try {
-                  const { id } = await loadDemo();
-                  router.push(`/events/${id}`);
-                  router.refresh();
+                  const id = await loadDemo();
+                  router.push(`/event?id=${encodeURIComponent(id)}`);
                 } catch (err) {
                   toast.error((err as Error).message);
                   setBusy(null);
@@ -194,8 +202,18 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
           <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
             <FolderOpen className="mt-0.5 size-3.5 shrink-0" />
             <span>
-              Stored in <code className="rounded bg-muted px-1 py-0.5 break-all">{dataPath}</code> (database <code>mune-splits.db</code> + <code>receipts</code> folder). A single event can be
-              exported as CSV from its ⋯ menu.
+              {info.platform === "desktop" ? (
+                <>
+                  Stored in <code className="rounded bg-muted px-1 py-0.5 break-all">{dataPath}</code> (database <code>mune-splits.db</code> +{" "}
+                  <code>receipts</code> folder).
+                </>
+              ) : (
+                <>
+                  Stored in {dataPath.charAt(0).toLowerCase() + dataPath.slice(1)}. Uninstalling the app (or clearing its data) deletes it, so export a backup now and then.
+                  Backups move between your phone and computer.
+                </>
+              )}{" "}
+              A single event can be exported as CSV from its ⋯ menu.
             </span>
           </p>
         </Section>
@@ -228,10 +246,10 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
                 onClick={async () => {
                   setBusy("import");
                   try {
-                    const r = await send<{ events: number }>(`/api/backup?mode=${mode}`, importFile);
+                    const r = await mutate((b) => b.importBackup(importFile, mode));
                     toast.success(`Imported ${r.events} event${r.events === 1 ? "" : "s"}`);
                     setImportFile(null);
-                    window.location.replace(window.location.origin); // full reload: settings and lists all changed
+                    window.location.replace(window.location.origin + (process.env.NEXT_PUBLIC_BASE_PATH ?? "") + "/"); // full reload: settings and lists all changed
                   } catch (err) {
                     toast.error((err as Error).message);
                   } finally {
@@ -263,9 +281,9 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
               disabled={confirmText !== "DELETE"}
               onClick={async () => {
                 try {
-                  await send("/api/reset", { confirm: "DELETE" });
+                  await mutate((b) => b.clearAll());
                   toast.success("All data cleared");
-                  window.location.replace(window.location.origin); // full reload: settings and lists all changed
+                  window.location.replace(window.location.origin + (process.env.NEXT_PUBLIC_BASE_PATH ?? "") + "/"); // full reload: settings and lists all changed
                 } catch (err) {
                   toast.error((err as Error).message);
                 }

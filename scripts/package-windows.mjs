@@ -27,7 +27,13 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.rmSync(`${out}.zip`, { force: true });
 fs.mkdirSync(out, { recursive: true });
 
-// 1. Standalone production build (separate distDir, see next.config.ts).
+// 1. Standalone production build (separate distDir, see next.config.ts). Start from a clean folder:
+// OneDrive can leave entries in an old build that Next can't delete, but cmd's rmdir can.
+try {
+  fs.rmSync(dist, { recursive: true, force: true });
+} catch {
+  execSync(`cmd /c rmdir /s /q "${dist}"`, { stdio: "ignore" });
+}
 execSync("npx next build", { cwd: root, stdio: "inherit", env: { ...process.env, MUNE_SPLITS_RELEASE: "1" } });
 
 // 2. Server + the static files it serves.

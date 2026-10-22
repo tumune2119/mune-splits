@@ -50,3 +50,11 @@ next-env.d.ts
 # release builds
 /.next-release/
 /release/
+
+# Android signing key - never commit (backed up in GitHub secrets + this folder)
+/.signing/
+
+# phone/web build output
+/out/
+/.local-build-stash/
+/public/sql-wasm.wasm

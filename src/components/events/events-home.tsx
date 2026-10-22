@@ -58,10 +58,9 @@ export function EventsHome({ events, people }: { events: EventSummary[]; people:
   const demo = async () => {
     setLoadingDemo(true);
     try {
-      const { id } = await loadDemo();
+      const id = await loadDemo();
       toast.success("Demo trip loaded");
-      router.push(`/events/${id}`);
-      router.refresh();
+      router.push(`/event?id=${encodeURIComponent(id)}`);
     } catch (err) {
       toast.error((err as Error).message);
       setLoadingDemo(false);
@@ -153,7 +152,7 @@ function EventCard({ event: e, index }: { event: EventSummary; index: number }) 
   const accent = e.color || "#FFB38A";
   return (
     <Link
-      href={`/events/${e.id}`}
+      href={`/event?id=${encodeURIComponent(e.id)}`}
       className="surface lift rise group relative block overflow-hidden rounded-2xl p-5"
       style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >

@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Eye, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/avatar";
 import { inputClass } from "@/components/fields";
 import { NEW_EVENT } from "@/components/app-shell";
-import { send } from "@/lib/client/api";
+import { mutate } from "@/lib/client/api";
 import { PERSON_COLORS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { PersonWithStats } from "@/lib/store";
+import type { PersonWithStats } from "@/lib/client/backend";
 
 export function PeopleManager({ people }: { people: PersonWithStats[] }) {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [showHidden, setShowHidden] = useState(false);
 
@@ -28,7 +26,6 @@ export function PeopleManager({ people }: { people: PersonWithStats[] }) {
     try {
       await p;
       if (success) toast.success(success);
-      router.refresh();
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -38,7 +35,7 @@ export function PeopleManager({ people }: { people: PersonWithStats[] }) {
     e.preventDefault();
     const n = name.trim();
     if (!n) return;
-    await call(send("/api/people", { name: n }), `${n} added`);
+    await call(mutate((b) => b.addPerson(n)), `${n} added`);
     setName("");
   };
 
@@ -89,7 +86,7 @@ function PersonRow({ person: p, call }: { person: PersonWithStats; call: (p: Pro
   const saveName = () => {
     const n = name.trim();
     if (!n || n === p.name) return setName(p.name);
-    call(send(`/api/people/${p.id}`, { name: n }, "PATCH"), "Renamed");
+    call(mutate((b) => b.updatePerson(p.id, { name: n })), "Renamed");
   };
 
   return (
@@ -106,7 +103,7 @@ function PersonRow({ person: p, call }: { person: PersonWithStats; call: (p: Pro
                 aria-label={`Colour ${c}`}
                 onClick={() => {
                   setPicking(false);
-                  call(send(`/api/people/${p.id}`, { color: c }, "PATCH"));
+                  call(mutate((b) => b.updatePerson(p.id, { color: c })));
                 }}
                 className={cn("size-7 rounded-full", p.color === c && "ring-2 ring-foreground ring-offset-2 ring-offset-popover")}
                 style={{ background: c }}
@@ -132,7 +129,7 @@ function PersonRow({ person: p, call }: { person: PersonWithStats; call: (p: Pro
       </div>
       {!p.isMe &&
         (p.hidden ? (
-          <Button variant="ghost" size="sm" onClick={() => call(send(`/api/people/${p.id}`, { hidden: false }, "PATCH"), `${p.name} is back in quick-add`)}>
+          <Button variant="ghost" size="sm" onClick={() => call(mutate((b) => b.updatePerson(p.id, { hidden: false })), `${p.name} is back in quick-add`)}>
             Unhide
           </Button>
         ) : (
@@ -143,7 +140,7 @@ function PersonRow({ person: p, call }: { person: PersonWithStats; call: (p: Pro
             aria-label={`Remove ${p.name}`}
             onClick={() =>
               call(
-                send<{ result: string }>(`/api/people/${p.id}`, undefined, "DELETE"),
+                mutate((b) => b.deletePerson(p.id)),
                 p.eventCount ? `${p.name} hidden (still in past events)` : `${p.name} deleted`,
               )
             }

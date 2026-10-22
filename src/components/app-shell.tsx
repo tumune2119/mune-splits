@@ -8,6 +8,7 @@ import { LogoMark, Wordmark } from "@/components/logo";
 import { Kbd } from "@/components/kbd";
 import { useApp } from "@/components/app-provider";
 import { QuitButton, StoppedScreen, useAppPresence } from "@/components/app-lifetime";
+import { asset, TARGET } from "@/lib/client/backend";
 import { cn } from "@/lib/utils";
 
 /** Fired by the global "N" shortcut; the current page decides what "new" means. */
@@ -19,15 +20,17 @@ export function isTyping(el: EventTarget | null) {
 }
 
 const NAV = [
-  { href: "/", label: "Events", icon: CalendarRange, match: (p: string) => p === "/" || p.startsWith("/events") },
+  { href: "/", label: "Events", icon: CalendarRange, match: (p: string) => p === "/" || p.startsWith("/event") },
   { href: "/people", label: "People", icon: Users, match: (p: string) => p.startsWith("/people") },
   { href: "/settings", label: "Settings", icon: Settings, match: (p: string) => p.startsWith("/settings") },
 ];
 
-export function AppShell({ launched, children }: { launched: boolean; children: React.ReactNode }) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { theme, toggleTheme, info } = useApp();
+  const launched = info.launched;
   const { stopped, setStopped } = useAppPresence(launched);
-  const { theme, toggleTheme } = useApp();
+  useNativeShell(info.native, theme);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -41,15 +44,15 @@ export function AppShell({ launched, children }: { launched: boolean; children: 
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Register the service worker so the app is installable as a PWA.
+  // Service worker: makes the app installable, and on the web build also keeps it working offline.
+  // Not used inside the Android/iOS app, which already ships every file.
   useEffect(() => {
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
-  }, []);
+    if (info.native || !("serviceWorker" in navigator) || process.env.NODE_ENV !== "production") return;
+    navigator.serviceWorker.register(asset(TARGET === "local" ? "/sw-offline.js" : "/sw.js")).catch(() => {});
+  }, [info.native]);
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh pt-[env(safe-area-inset-top)]">
       <aside className="no-print sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <Link href="/" className="flex items-center gap-2.5 px-5 pt-6 pb-7" aria-label="MUNE Splits home">
           <LogoMark className="size-8 drop-shadow-[0_0_12px_rgb(255_148_85/0.35)]" />
@@ -109,4 +112,40 @@ export function AppShell({ launched, children }: { launched: boolean; children: 
       {stopped && <StoppedScreen />}
     </div>
   );
+}
+
+/**
+ * Android/iOS app only: dark/light status bar to match the theme, and the Android back button
+ * closes dialogs first, then goes back, then leaves the app from the home screen.
+ */
+function useNativeShell(native: boolean, theme: "dark" | "light") {
+  useEffect(() => {
+    if (!native) return;
+    import("@capacitor/status-bar")
+      .then(async ({ StatusBar, Style }) => {
+        await StatusBar.setStyle({ style: theme === "dark" ? Style.Dark : Style.Light });
+        await StatusBar.setBackgroundColor({ color: theme === "dark" ? "#0e0e10" : "#f7f5f3" }).catch(() => {});
+      })
+      .catch(() => {});
+  }, [native, theme]);
+
+  useEffect(() => {
+    if (!native) return;
+    let remove: (() => void) | undefined;
+    import("@capacitor/app").then(({ App }) => {
+      const handle = App.addListener("backButton", ({ canGoBack }) => {
+        const dialog = document.querySelector("[role=dialog], [role=alertdialog]");
+        if (dialog) {
+          // Bubbles up to the document, where Radix listens for Escape to close the top layer.
+          dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        } else if (canGoBack && window.location.pathname.replace(/\/$/, "") !== (process.env.NEXT_PUBLIC_BASE_PATH ?? "")) {
+          window.history.back();
+        } else {
+          App.exitApp();
+        }
+      });
+      remove = () => void handle.then((h) => h.remove());
+    });
+    return () => remove?.();
+  }, [native]);
 }

@@ -4,13 +4,10 @@ import { GeistMono } from "geist/font/mono";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { AppShell } from "@/components/app-shell";
-import { AppProvider } from "@/components/app-provider";
-import { getSettings } from "@/lib/store";
-import { AUTO_EXIT } from "@/lib/app-lifetime";
+import { AppProvider, THEME_KEY } from "@/components/app-provider";
 import "./globals.css";
 
-// Everything reads from the local SQLite database at request time.
-export const dynamic = "force-dynamic";
+const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const metadata: Metadata = {
   title: { default: "MUNE Splits", template: "%s · MUNE Splits" },
@@ -18,11 +15,13 @@ export const metadata: Metadata = {
   applicationName: "MUNE Splits",
   icons: {
     icon: [
-      { url: "/icons/icon.svg", type: "image/svg+xml" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: `${base}/icons/icon.svg`, type: "image/svg+xml" },
+      { url: `${base}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
     ],
-    apple: "/icons/icon-192.png",
+    apple: `${base}/icons/apple-touch-icon.png`,
   },
+  // iPhone "Add to Home Screen": full-screen app with a dark status bar.
+  appleWebApp: { capable: true, title: "MUNE Splits", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
@@ -32,14 +31,19 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+// Paint in the last-used theme before React loads (no flash of the wrong theme).
+const THEME_SCRIPT = `try{var t=localStorage.getItem(${JSON.stringify(THEME_KEY)});if(t==="light"){var c=document.documentElement.classList;c.remove("dark");c.add("light")}}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  const settings = getSettings();
   return (
-    <html lang="en" className={`${settings.theme} ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
+    <html lang="en" className={`dark ${GeistSans.variable} ${GeistMono.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
-        <AppProvider initial={settings}>
+        <AppProvider>
           <TooltipProvider delayDuration={300}>
-            <AppShell launched={AUTO_EXIT}>{children}</AppShell>
+            <AppShell>{children}</AppShell>
           </TooltipProvider>
           <Toaster position="bottom-right" richColors closeButton />
         </AppProvider>

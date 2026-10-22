@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ export function PeopleDialog({
   run: (a: EventAction, success?: string) => Promise<EventDetail>;
   readOnly: boolean;
 }) {
-  const router = useRouter();
   const [name, setName] = useState("");
   const inEvent = new Set(event.participants.map((p) => p.id));
   const available = people.filter((p) => !inEvent.has(p.id) && !p.hidden);
@@ -39,7 +37,6 @@ export function PeopleDialog({
     if (!n) return;
     await run({ type: "add-participant", name: n }, `${n} added`).catch(() => {});
     setName("");
-    router.refresh();
   };
 
   return (

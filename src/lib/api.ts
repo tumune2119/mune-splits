@@ -1,6 +1,6 @@
 import "server-only";
 import { ZodError } from "zod";
-import { NotFoundError, UserError } from "./store";
+import { NotFoundError, UserError } from "./core/store";
 
 /** Runs a route handler body and turns known errors into JSON responses. */
 export async function handle(fn: () => unknown | Promise<unknown>): Promise<Response> {

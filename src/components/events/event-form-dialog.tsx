@@ -86,8 +86,7 @@ function EventForm({ onOpenChange, people, event, onSaved }: Props) {
         const pending = newName.trim() ? [...newPeople, newName.trim()] : newPeople;
         const created = await createEventRequest({ ...fields, personIds: selected, newPeople: pending });
         onOpenChange(false);
-        router.push(`/events/${created.id}`);
-        router.refresh();
+        router.push(`/event?id=${encodeURIComponent(created.id)}`);
       }
     } catch (err) {
       toast.error((err as Error).message);

@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { listPeople } from "@/lib/store";
-import { PeopleManager } from "@/components/people-manager";
+import { PeopleScreen } from "@/components/screens";
 
 export const metadata: Metadata = { title: "People" };
 
 export default function PeoplePage() {
-  return <PeopleManager people={listPeople(true)} />;
+  return <PeopleScreen />;
 }

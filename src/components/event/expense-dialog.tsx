@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/avatar";
 import { Field, Segmented, inputClass } from "@/components/fields";
 import { useApp } from "@/components/app-provider";
-import { uploadReceipt } from "@/lib/client/api";
+import { uploadReceipt, useData } from "@/lib/client/api";
 import { currencySymbol, minorToInput, parseAmount } from "@/lib/money";
 import { previewShares, validateExpense, type SplitEntry, type SplitMode } from "@/lib/splits";
 import { SPLIT_MODE_LABELS, today } from "@/lib/constants";
@@ -367,7 +367,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
                       </span>
                     )}
 
-                    <span className={cn("money w-24 text-right text-sm font-medium", share ? "text-foreground" : "text-muted-foreground/60")}>
+                    <span className={cn("money ml-auto w-24 text-right text-sm font-medium", share ? "text-foreground" : "text-muted-foreground/60")}>
                       {fmt(share, cur)}
                     </span>
                   </div>
@@ -415,16 +415,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
               <span className="block text-xs font-medium text-muted-foreground">Receipt</span>
               {receipt ? (
                 <div className="relative">
-                  <a href={`/api/receipts/${receipt}`} target="_blank" rel="noreferrer" className="block">
-                    {receipt.endsWith(".pdf") || receipt.endsWith(".heic") ? (
-                      <span className="grid size-16 place-items-center rounded-xl border border-border bg-muted text-xs text-muted-foreground">
-                        <Paperclip className="size-5" />
-                      </span>
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`/api/receipts/${receipt}`} alt="Receipt" className="size-16 rounded-xl border border-border object-cover" />
-                    )}
-                  </a>
+                  <ReceiptThumb name={receipt} />
                   <button
                     type="button"
                     onClick={() => setReceipt(null)}
@@ -469,6 +460,24 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
         </div>
       </DialogContent>
     </>
+  );
+}
+
+/** Receipt preview; tapping it opens the full image/PDF. URLs come from the backend (server file or on-device blob). */
+function ReceiptThumb({ name }: { name: string }) {
+  const { data: url } = useData((b) => b.receiptUrl(name), [name]);
+  const isImage = !/\.(pdf|heic)$/.test(name);
+  return (
+    <a href={url ?? undefined} target="_blank" rel="noreferrer" className="block">
+      {isImage && url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="Receipt" className="size-16 rounded-xl border border-border object-cover" />
+      ) : (
+        <span className="grid size-16 place-items-center rounded-xl border border-border bg-muted text-xs text-muted-foreground">
+          <Paperclip className="size-5" />
+        </span>
+      )}
+    </a>
   );
 }
 
