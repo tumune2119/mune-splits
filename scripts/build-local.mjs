@@ -15,7 +15,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const stash = path.join(root, ".local-build-stash");
-const serverOnly = ["src/app/api", "src/proxy.ts", "src/instrumentation.ts", ".next"];
+// .next-release (the Windows build) holds type files that point at the server routes, so it goes too.
+const serverOnly = ["src/app/api", "src/proxy.ts", "src/instrumentation.ts", ".next", ".next-release"];
 
 // Windows + OneDrive can leave entries Node can't delete; cmd's rmdir copes with them.
 function removeDir(dir) {

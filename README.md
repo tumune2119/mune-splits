@@ -6,7 +6,7 @@
 
 <p align="center">
   Split trip and event expenses with friends. It works out who owes whom, and the fewest payments to settle up.<br>
-  Local-first: your data never leaves your device. No accounts, no cloud, no tracking.<br>
+  Private by default: events stay on your device unless you share one with the group. No accounts, no tracking.<br>
   Runs on <b>Windows</b>, <b>Android</b> and <b>iPhone</b>.
 </p>
 
@@ -33,6 +33,7 @@
   - Plus **multiple payers** on one expense, notes, and receipt photos.
 - **Balances:** see who owes whom as the fewest possible payments, or switch to the raw debts.
 - **Settle up:** one click on **Mark as paid**, partial payments, undo, then lock the event as **Settled**.
+- **Shared events (live):** tap **Share** on an event to get an invite link. Friends open it, tap who they are, and everyone sees the same expenses and payments update live, even across phones and computers. No sign-ups.
 - **Share it:** a polished **PDF report** ([example](docs/sample-report.pdf)), a print view, a WhatsApp-ready text summary, or CSV.
 - **Dark mode by default** with a light theme, installable as an app, and it works offline.
 
@@ -75,9 +76,24 @@ On iPhone, open it from the home-screen icon rather than a Safari tab: Safari ma
 
 > Each device keeps its own data; nothing syncs. To move or copy events between your computer and phone, use **Settings → Export all data** on one and **Import backup** on the other.
 
+## Shared events
+
+Events are private to your device until you share one:
+
+1. Open the event and tap **Share**. Enter your name (friends see it in the list), then **Share online**.
+2. Send the invite link (**Send invite** opens WhatsApp or other apps).
+3. Friends open the link, tap **which person they are** (or add themselves), and they're in. On Android and Windows they can also paste the link under **Join with a link**.
+
+From then on, anyone in the group can add expenses, mark payments and settle up. Everyone sees changes as they happen, with a notice like "Priya added *Dinner*". Expenses show who added them. Without a connection, a shared event still opens and takes expenses; they sync when you're back online.
+
+- **Who can see it:** anyone with the link. It contains a 24-character random code and events can't be listed or searched, but only share it with the group.
+- **Where it's stored:** Google Firebase (Cloud Firestore), in the project owner's account. Unshared events never leave your device.
+- **Leaving:** the event's ⋯ menu → **Leave event** removes it from your device only. **Delete for everyone** removes it for the whole group.
+- **Receipts** in shared events are stored as compressed images (up to about 600 KB each).
+
 ## Your data
 
-Everything is stored on your device:
+Unshared events are stored only on your device:
 
 | | Windows (installed) | Windows (from source) | Android, iPhone, web app |
 | --- | --- | --- | --- |

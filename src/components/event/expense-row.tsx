@@ -47,6 +47,7 @@ export function ExpenseRow({
           {showDate && `${formatDate(e.date, settings.locale)} · `}
           {payersLabel(e, math.people)} paid · {e.mode === "exact" ? "Exact: " : e.mode === "shares" ? "Shares: " : ""}
           {describeSplit(e, math.people)}
+          {event.shared && e.createdBy && e.createdBy !== event.shared.me && math.people.get(e.createdBy) && ` · added by ${math.people.get(e.createdBy)!.name}`}
         </span>
       </span>
       <span className="shrink-0 text-right">

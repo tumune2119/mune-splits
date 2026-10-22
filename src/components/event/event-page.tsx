@@ -11,12 +11,15 @@ import {
   ClipboardCopy,
   FileDown,
   FileSpreadsheet,
+  Globe,
   Loader2,
+  LogOut,
   MoreHorizontal,
   Pencil,
   Plus,
   Printer,
   RotateCcw,
+  Share2,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -42,12 +45,16 @@ import { ExpensesTab } from "@/components/event/expenses-tab";
 import { BalancesTab } from "@/components/event/balances-tab";
 import { SettleTab } from "@/components/event/settle-tab";
 import { deleteEventRequest, patchEvent } from "@/lib/client/api";
-import { backend } from "@/lib/client/backend";
 import { saveText, shareText } from "@/lib/client/platform";
 import { fileSafe } from "@/lib/format";
 import { eventMath } from "@/lib/event-math";
 import { formatRange, formatTimestamp } from "@/lib/format";
 import { summaryText } from "@/lib/summary-text";
+import { eventToCsv } from "@/lib/csv";
+import { sharingEnabled } from "@/lib/shared/config";
+import { removeMembership, upsertMembership } from "@/lib/shared/memberships";
+import { ShareDialog } from "@/components/shared/share-dialog";
+import { EventDataProvider, type EventData } from "@/components/event/event-data";
 import { cn } from "@/lib/utils";
 import type { EventAction, ExpenseFields } from "@/lib/event-actions";
 import type { EventDetail, Expense, Person } from "@/lib/types";
@@ -60,12 +67,27 @@ const TABS = [
 ] as const;
 export type Tab = (typeof TABS)[number]["value"];
 
-export function EventPage({ initial, people }: { initial: EventDetail; people: Person[] }) {
+export function EventPage({ initial, people, openInvite = false }: { initial: EventDetail; people: Person[]; openInvite?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const { settings, fmt, info } = useApp();
-  const [event, setEvent] = useState(initial);
+  const shared = initial.shared ?? null;
+  // A shared event follows the live copy its screen keeps up to date; a local one is held here.
+  const [localEvent, setLocalEvent] = useState(initial);
+  const event = shared ? initial : localEvent;
+  const setEvent = useCallback((e: EventDetail) => setLocalEvent(e), []);
   const math = useMemo(() => eventMath(event), [event]);
+  const [shareOpen, setShareOpen] = useState(openInvite);
+  const eventData = useMemo<EventData | null>(
+    () =>
+      shared
+        ? {
+            uploadReceipt: async (file) => (await import("@/lib/shared/client")).uploadSharedReceipt(shared.sid, file),
+            receiptUrl: async (name) => (await import("@/lib/shared/client")).sharedReceiptUrl(shared.sid, name),
+          }
+        : null,
+    [shared],
+  );
   const [tab, setTabState] = useState<Tab>(() => (TABS.some((t) => t.value === params.get("tab")) ? (params.get("tab") as Tab) : "overview"));
   const [expenseOpen, setExpenseOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
@@ -85,16 +107,18 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
   const run = useCallback(
     async (action: EventAction, success?: string) => {
       try {
-        const next = await patchEvent(event.id, action);
+        const next = event.shared
+          ? await (await import("@/lib/shared/client")).applySharedAction(event, action)
+          : await patchEvent(event.id, action);
         setEvent(next);
         if (success) toast.success(success);
         return next;
       } catch (err) {
-        toast.error((err as Error).message);
+        toast.error(friendlyError(err));
         throw err;
       }
     },
-    [event.id],
+    [event, setEvent],
   );
 
   const addExpense = useCallback(() => {
@@ -170,7 +194,7 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
 
   const exportCsv = async () => {
     try {
-      const csv = await (await backend()).eventCsv(event.id);
+      const csv = eventToCsv(event).replace(/^﻿/, "");
       // The BOM makes Excel read the file as UTF-8 (₹, names with accents).
       await saveText(String.fromCharCode(0xfeff) + csv, `MUNE-Splits_${fileSafe(event.name)}_${new Date().toLocaleDateString("sv-SE")}.csv`, "text/csv");
     } catch (err) {
@@ -180,8 +204,9 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
 
   const accent = event.color || "#FFB38A";
   const range = formatRange(event.startDate, event.endDate, settings.locale);
+  const me = shared ? event.participants.find((p) => p.isMe) : undefined;
 
-  return (
+  const page = (
     <div className="mx-auto max-w-6xl px-4 pt-5 pb-28 sm:px-8 sm:pt-8">
       <Link href="/" className="no-print mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> Events
@@ -200,9 +225,22 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
               </span>
             )}
             {event.status === "archived" && <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground">Archived</span>}
+            {shared && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand/12 px-2.5 py-0.5 text-xs font-medium text-brand">
+                <Globe className="size-3.5" /> Shared · live
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {[range, event.currency, `${event.participants.length} people`].filter(Boolean).join(" · ")}
+            {me && (
+              <>
+                {" · "}you&apos;re <span className="font-medium text-foreground">{me.name}</span>{" "}
+                <button className="text-brand hover:underline" onClick={() => shared && upsertMembership({ sid: shared.sid, me: null, name: event.name })}>
+                  (change)
+                </button>
+              </>
+            )}
           </p>
           {event.description && <p className="mt-1.5 max-w-2xl text-sm text-foreground/80">{event.description}</p>}
         </div>
@@ -216,6 +254,12 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
             <AvatarStack people={event.participants} max={5} size={26} />
             <UserPlus className="size-4 text-muted-foreground" />
           </button>
+          {(shared || sharingEnabled()) && (
+            <Button className="h-10 rounded-xl" onClick={() => setShareOpen(true)} aria-label={shared ? "Invite" : "Share"}>
+              <Share2 />
+              <span className="hidden sm:inline">{shared ? "Invite" : "Share"}</span>
+            </Button>
+          )}
           <Button variant="outline" className="h-10 rounded-xl" onClick={exportPdf} disabled={exporting} aria-label="Export PDF">
             {exporting ? <Loader2 className="animate-spin" /> : <FileDown />}
             <span className="hidden sm:inline">Export PDF</span>
@@ -233,7 +277,7 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
               <DropdownMenuItem onSelect={copySummary}>
                 <ClipboardCopy /> {info.platform === "desktop" ? "Copy summary" : "Share summary"}
               </DropdownMenuItem>
-              {!info.native && (
+              {!info.native && !shared && (
                 <DropdownMenuItem onSelect={() => window.open(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/event/print?id=${encodeURIComponent(event.id)}`, "_blank")}>
                   <Printer /> Print view
                 </DropdownMenuItem>
@@ -255,19 +299,48 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
                   <Archive /> Archive
                 </DropdownMenuItem>
               )}
+              {shared && (
+                <ConfirmButton
+                  title={`Leave “${event.name}”?`}
+                  description="It disappears from this device only. Everyone else keeps it, and you can rejoin with the link."
+                  confirmLabel="Leave"
+                  onConfirm={() => {
+                    removeMembership(shared.sid);
+                    toast.success("You left the event");
+                    router.push("/");
+                  }}
+                >
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <LogOut /> Leave event
+                  </DropdownMenuItem>
+                </ConfirmButton>
+              )}
               <ConfirmButton
-                title={`Delete “${event.name}”?`}
-                description="All its expenses and payments are deleted for good. Export a PDF or backup first if you want to keep a record."
-                confirmLabel="Delete event"
+                title={shared ? `Delete “${event.name}” for everyone?` : `Delete “${event.name}”?`}
+                description={
+                  shared
+                    ? "Everyone in the group loses it, with all its expenses and payments. Export a PDF first if anyone wants a record."
+                    : "All its expenses and payments are deleted for good. Export a PDF or backup first if you want to keep a record."
+                }
+                confirmLabel={shared ? "Delete for everyone" : "Delete event"}
                 destructive
                 onConfirm={async () => {
-                  await deleteEventRequest(event.id);
-                  toast.success("Event deleted");
-                  router.push("/");
+                  try {
+                    if (shared) {
+                      await (await import("@/lib/shared/client")).deleteSharedEvent(shared.sid);
+                      removeMembership(shared.sid);
+                    } else {
+                      await deleteEventRequest(event.id);
+                    }
+                    toast.success("Event deleted");
+                    router.push("/");
+                  } catch (err) {
+                    toast.error(friendlyError(err));
+                  }
                 }}
               >
                 <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
-                  <Trash2 /> Delete event
+                  <Trash2 /> {shared ? "Delete for everyone" : "Delete event"}
                 </DropdownMenuItem>
               </ConfirmButton>
             </DropdownMenuContent>
@@ -336,8 +409,23 @@ export function EventPage({ initial, people }: { initial: EventDetail; people: P
         onSubmit={saveExpense}
         onDelete={editing && !readOnly ? () => deleteExpense(editing) : undefined}
       />
-      <EventFormDialog open={editEvent} onOpenChange={setEditEvent} people={people} event={event} onSaved={setEvent} />
+      <EventFormDialog
+        open={editEvent}
+        onOpenChange={setEditEvent}
+        people={people}
+        event={event}
+        onSaved={setEvent}
+        saveUpdate={shared ? (fields) => run({ type: "update", fields }) : undefined}
+      />
       <PeopleDialog open={peopleOpen} onOpenChange={setPeopleOpen} event={event} people={people} run={run} readOnly={readOnly} />
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} event={event} />
     </div>
   );
+  return eventData ? <EventDataProvider value={eventData}>{page}</EventDataProvider> : page;
+}
+
+/** Validation errors from shared edits arrive as zod errors; show their message like the server would. */
+function friendlyError(err: unknown): string {
+  const issues = (err as { issues?: { message?: string }[] })?.issues;
+  return issues?.[0]?.message ?? (err as Error)?.message ?? "Something went wrong";
 }

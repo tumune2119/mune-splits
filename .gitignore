@@ -58,3 +58,8 @@ next-env.d.ts
 /out/
 /.local-build-stash/
 /public/sql-wasm.wasm
+
+# Firebase CLI
+firebase-debug.log*
+firestore-debug.log*
+.firebase/

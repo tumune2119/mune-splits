@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// MUNE Splits shared events. There are no accounts: an event's id is a 24-character random secret that
+// only travels inside its invite link, so knowing the id is what grants access. Nobody can list or
+// search events, and documents must keep the shape the app writes.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function validId(id) {
+      return id.size() >= 20 && id.size() <= 64;
+    }
+
+    function validEvent(d) {
+      return d.keys().hasAll(['v', 'name', 'currency', 'people', 'status', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && d.currency is string && d.currency.size() == 3
+        && d.people is list && d.people.size() <= 100
+        && d.status in ['active', 'settled', 'archived'];
+    }
+
+    match /events/{eventId} {
+      allow get: if validId(eventId);
+      allow list: if false;
+      allow create: if validId(eventId) && validEvent(request.resource.data);
+      allow update: if validId(eventId) && validEvent(request.resource.data);
+      allow delete: if validId(eventId);
+
+      match /expenses/{id} {
+        allow read: if validId(eventId);
+        allow delete: if validId(eventId);
+        allow write: if validId(eventId)
+          && request.resource.data.amount is int && request.resource.data.amount > 0
+          && request.resource.data.title is string && request.resource.data.title.size() <= 160
+          && request.resource.data.payers is list && request.resource.data.split is list;
+      }
+
+      match /settlements/{id} {
+        allow read: if validId(eventId);
+        allow delete: if validId(eventId);
+        allow write: if validId(eventId)
+          && request.resource.data.amount is int && request.resource.data.amount > 0
+          && request.resource.data.fromId is string && request.resource.data.toId is string;
+      }
+
+      match /receipts/{name} {
+        allow read: if validId(eventId);
+        allow delete: if validId(eventId);
+        allow create: if validId(eventId)
+          && request.resource.data.data is string
+          && request.resource.data.data.matches('^data:(image/(jpeg|png|webp|gif|heic)|application/pdf);base64,.*');
+      }
+    }
+  }
+}

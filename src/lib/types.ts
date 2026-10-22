@@ -45,6 +45,8 @@ export interface Expense {
   receipt: string | null;
   createdAt: number;
   updatedAt: number;
+  /** Shared events: the person who added it. */
+  createdBy?: string | null;
 }
 
 export interface Settlement {
@@ -57,15 +59,21 @@ export interface Settlement {
   date: string;
   note: string;
   createdAt: number;
+  /** Shared events: the person who recorded it. */
+  createdBy?: string | null;
 }
 
 export interface EventDetail extends EventBase {
   participants: Person[];
   expenses: Expense[];
   settlements: Settlement[];
+  /** Set for events shared online: the secret id in the link, and which person this device is. */
+  shared?: { sid: string; me: string | null };
 }
 
 export interface EventSummary extends EventBase {
+  /** Shared online (the summary's id is then the share id). */
+  shared?: boolean;
   participants: Pick<Person, "id" | "name" | "color" | "isMe">[];
   total: number;
   expenseCount: number;

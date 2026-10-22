@@ -11,37 +11,13 @@ import { createDemoTrip } from "../core/demo";
 import { eventToCsv } from "../csv";
 import { idb, type StoredReceipt } from "./idb";
 import { openLocalDb } from "./sqljs";
+import { blobToDataUrl, shrinkImage } from "../client/images";
 import type { Backend } from "../client/backend";
 
 /** Turn validation errors into the same plain messages the desktop API returns. */
 function friendly(err: unknown): never {
   if (err instanceof ZodError) throw new Error(err.issues[0]?.message ?? "Invalid input");
   throw err;
-}
-
-const blobToDataUrl = (blob: Blob) =>
-  new Promise<string>((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(blob);
-  });
-
-/** Phone photos are large; keep receipts readable but small (longest side 1600px, JPEG). */
-async function shrinkImage(file: File): Promise<Blob> {
-  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 400_000) return file;
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const out = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.82));
-    return out && out.size < file.size ? out : file;
-  } catch {
-    return file;
-  }
 }
 
 export async function createLocalBackend(): Promise<Backend> {

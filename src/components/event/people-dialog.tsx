@@ -26,7 +26,11 @@ export function PeopleDialog({
 }) {
   const [name, setName] = useState("");
   const inEvent = new Set(event.participants.map((p) => p.id));
-  const available = people.filter((p) => !inEvent.has(p.id) && !p.hidden);
+  // Shared events have their own people, so match your saved list by name there.
+  const namesInEvent = new Set(event.participants.map((p) => p.name.toLowerCase()));
+  const available = people.filter(
+    (p) => !p.hidden && (event.shared ? !p.isMe && !namesInEvent.has(p.name.toLowerCase()) : !inEvent.has(p.id)),
+  );
 
   const used = (id: string) =>
     event.expenses.some((e) => e.payers.some((p) => p.personId === id) || e.split.some((s) => s.personId === id)) ||
@@ -77,7 +81,7 @@ export function PeopleDialog({
                 {available.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => run({ type: "add-participant", personId: p.id }, `${p.name} added`).catch(() => {})}
+                    onClick={() => run(event.shared ? { type: "add-participant", name: p.name } : { type: "add-participant", personId: p.id }, `${p.name} added`).catch(() => {})}
                     className="inline-flex items-center gap-1.5 rounded-full border border-border py-1 pr-3 pl-1 text-sm text-muted-foreground transition-colors hover:border-brand/50 hover:text-foreground"
                   >
                     <Avatar person={p} size={22} />

@@ -13,6 +13,7 @@ import { createEventRequest, patchEvent } from "@/lib/client/api";
 import { CURRENCIES } from "@/lib/money";
 import { EVENT_COLORS, EVENT_EMOJIS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import type { EventFields } from "@/lib/event-actions";
 import type { EventBase, EventDetail, Person } from "@/lib/types";
 
 type Props = {
@@ -21,6 +22,8 @@ type Props = {
   people: Person[];
   event?: EventBase;
   onSaved?: (e: EventDetail) => void;
+  /** Shared events save their details through the cloud instead of this device's database. */
+  saveUpdate?: (fields: Partial<EventFields>) => Promise<EventDetail>;
 };
 
 /** Create a new event (with people) or edit an existing event's details. Fresh form state on every open. */
@@ -32,7 +35,7 @@ export function EventFormDialog(props: Props) {
   );
 }
 
-function EventForm({ onOpenChange, people, event, onSaved }: Props) {
+function EventForm({ onOpenChange, people, event, onSaved, saveUpdate }: Props) {
   const router = useRouter();
   const { settings } = useApp();
   const editing = !!event;
@@ -78,7 +81,7 @@ function EventForm({ onOpenChange, people, event, onSaved }: Props) {
     };
     try {
       if (editing) {
-        const updated = await patchEvent(event!.id, { type: "update", fields });
+        const updated = saveUpdate ? await saveUpdate(fields) : await patchEvent(event!.id, { type: "update", fields });
         onSaved?.(updated);
         onOpenChange(false);
         toast.success("Event updated");

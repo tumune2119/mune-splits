@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Loader2, Plus, Sparkles } from "lucide-react";
+import { CheckCircle2, Globe, Link as LinkIcon, Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/kbd";
@@ -14,6 +14,8 @@ import { LogoMark } from "@/components/logo";
 import { useApp } from "@/components/app-provider";
 import { NEW_EVENT } from "@/components/app-shell";
 import { EventFormDialog } from "@/components/events/event-form-dialog";
+import { JoinDialog } from "@/components/shared/join-dialog";
+import { sharingEnabled } from "@/lib/shared/config";
 import { loadDemo } from "@/lib/client/api";
 import { formatRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,7 @@ export function EventsHome({ events, people }: { events: EventSummary[]; people:
   const { settings } = useApp();
   const [filter, setFilter] = useState<Filter>("active");
   const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState(false);
 
   useEffect(() => {
@@ -74,10 +77,18 @@ export function EventsHome({ events, people }: { events: EventSummary[]; people:
           <h1 className="text-[1.75rem] font-semibold tracking-tight">Events</h1>
           <p className="mt-1 text-sm text-muted-foreground">Trips, dinners and everything in between.</p>
         </div>
-        <Button className="h-10 rounded-xl px-4" onClick={() => setCreating(true)}>
-          <Plus /> New event <Kbd className="ml-1 border-black/15 bg-black/10 text-primary-foreground">N</Kbd>
-        </Button>
+        <div className="flex gap-2">
+          {sharingEnabled() && (
+            <Button variant="outline" className="h-10 rounded-xl px-4" onClick={() => setJoining(true)}>
+              <LinkIcon /> Join with a link
+            </Button>
+          )}
+          <Button className="h-10 rounded-xl px-4" onClick={() => setCreating(true)}>
+            <Plus /> New event <Kbd className="ml-1 border-black/15 bg-black/10 text-primary-foreground">N</Kbd>
+          </Button>
+        </div>
       </header>
+      <JoinDialog open={joining} onOpenChange={setJoining} />
 
       {events.length === 0 ? (
         <EmptyHome onCreate={() => setCreating(true)} onDemo={demo} loadingDemo={loadingDemo} />
@@ -152,7 +163,7 @@ function EventCard({ event: e, index }: { event: EventSummary; index: number }) 
   const accent = e.color || "#FFB38A";
   return (
     <Link
-      href={`/event?id=${encodeURIComponent(e.id)}`}
+      href={e.shared ? `/event?s=${encodeURIComponent(e.id)}` : `/event?id=${encodeURIComponent(e.id)}`}
       className="surface lift rise group relative block overflow-hidden rounded-2xl p-5"
       style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >
@@ -173,6 +184,11 @@ function EventCard({ event: e, index }: { event: EventSummary; index: number }) 
           </span>
         )}
         {e.status === "archived" && <span className="rounded-full bg-secondary px-2 py-0.5 text-[0.7rem] font-medium text-muted-foreground">Archived</span>}
+        {e.shared && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-brand/12 px-2 py-0.5 text-[0.7rem] font-medium text-brand" title="Shared with the group">
+            <Globe className="size-3" /> Shared
+          </span>
+        )}
       </div>
 
       <div className="mt-6 flex items-end justify-between gap-3">

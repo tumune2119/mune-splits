@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Check, ImagePlus, Loader2, Minus, Paperclip, Plus, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/avatar";
 import { Field, Segmented, inputClass } from "@/components/fields";
 import { useApp } from "@/components/app-provider";
-import { uploadReceipt, useData } from "@/lib/client/api";
+import { useEventData } from "@/components/event/event-data";
 import { currencySymbol, minorToInput, parseAmount } from "@/lib/money";
 import { previewShares, validateExpense, type SplitEntry, type SplitMode } from "@/lib/splits";
 import { SPLIT_MODE_LABELS, today } from "@/lib/constants";
@@ -80,6 +80,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
   const { settings, fmt } = useApp();
   const cur = event.currency;
   const people = event.participants;
+  const eventData = useEventData();
   const [init] = useState(() => initialState(event, expense, settings.categories[0]?.name ?? "Other"));
 
   const [amountStr, setAmountStr] = useState(init.amountStr);
@@ -154,7 +155,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
     if (!file) return;
     setUploading(true);
     try {
-      setReceipt(await uploadReceipt(file));
+      setReceipt(await eventData.uploadReceipt(file));
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -465,7 +466,15 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
 
 /** Receipt preview; tapping it opens the full image/PDF. URLs come from the backend (server file or on-device blob). */
 function ReceiptThumb({ name }: { name: string }) {
-  const { data: url } = useData((b) => b.receiptUrl(name), [name]);
+  const eventData = useEventData();
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    eventData.receiptUrl(name).then((u) => alive && setUrl(u)).catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [name, eventData]);
   const isImage = !/\.(pdf|heic)$/.test(name);
   return (
     <a href={url ?? undefined} target="_blank" rel="noreferrer" className="block">
