@@ -131,7 +131,7 @@ function InviteBody({ event }: { event: EventDetail }) {
       >
         <Share2 /> Send invite
       </Button>
-      <p className="text-xs text-muted-foreground">Anyone with the link can see and edit this event. It opens in any browser, and Android or Windows friends can paste it into the app under “Join a shared event”.</p>
+      <p className="text-xs text-muted-foreground">Anyone with the link can see and edit this event. It opens in any browser, and Android or Windows friends can paste it into the app under “Join with a link”.</p>
     </DialogContent>
   );
 }
