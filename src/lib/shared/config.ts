@@ -6,7 +6,14 @@
  * null = sharing switched off (the app then works exactly as before, on this device only).
  * NEXT_PUBLIC_FIREBASE_CONFIG (JSON) overrides it at build time, e.g. for tests against the emulator.
  */
-const PROJECT: Record<string, string> | null = null;
+const PROJECT: Record<string, string> | null = {
+  apiKey: "AIzaSyD-VixVL35zxRX-DYDXo46eCJGk4tvO_xE",
+  authDomain: "mune-splits-f6629.firebaseapp.com",
+  projectId: "mune-splits-f6629",
+  storageBucket: "mune-splits-f6629.firebasestorage.app",
+  messagingSenderId: "1001061629050",
+  appId: "1:1001061629050:web:5ed5ab0134e1cceb594fc3",
+};
 
 export const firebaseConfig: Record<string, string> | null = process.env.NEXT_PUBLIC_FIREBASE_CONFIG
   ? JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG)
