@@ -88,8 +88,10 @@ jobs:
             -sdk iphonesimulator -destination "generic/platform=iOS Simulator" \
             CODE_SIGNING_ALLOWED=NO build | tail -20
 
+  # Only main deploys: GitHub Pages' environment accepts deployments from main alone, and a release
+  # tag points at a commit main has already deployed.
   pages-build:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
