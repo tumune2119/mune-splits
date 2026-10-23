@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
@@ -37,6 +37,7 @@ import { OverviewTab } from "@/components/event/overview-tab";
 import { ExpensesTab } from "@/components/event/expenses-tab";
 import { BalancesTab } from "@/components/event/balances-tab";
 import { SettleTab } from "@/components/event/settle-tab";
+import { useSwipeTabs } from "@/components/event/use-swipe-tabs";
 import { deleteEventRequest, patchEvent } from "@/lib/client/api";
 import { saveText, shareText } from "@/lib/client/platform";
 import { fileSafe } from "@/lib/format";
@@ -95,6 +96,18 @@ export function EventPage({ initial, people, openInvite = false }: { initial: Ev
     if (t === "overview") url.searchParams.delete("tab");
     else url.searchParams.set("tab", t);
     window.history.replaceState(null, "", url);
+  };
+  // Swipe left / right between tabs on phones; the new tab slides in from that side.
+  const [slideFrom, setSlideFrom] = useState<"left" | "right" | null>(null);
+  const swipeArea = useRef<HTMLDivElement>(null);
+  const swipeContent = useRef<HTMLDivElement>(null);
+  useSwipeTabs(swipeArea, swipeContent, TABS.map((t) => t.value), tab, (t, from) => {
+    setSlideFrom(from);
+    setTab(t);
+  });
+  const pickTab = (t: Tab) => {
+    setSlideFrom(null);
+    setTab(t);
   };
 
   const run = useCallback(
@@ -347,34 +360,38 @@ export function EventPage({ initial, people, openInvite = false }: { initial: Ev
         </div>
       )}
 
-      <nav className="no-print sticky top-[env(safe-area-inset-top)] z-20 -mx-4 mt-6 border-b border-border bg-background/85 px-4 backdrop-blur-xl sm:-mx-8 sm:px-8">
-        <div className="flex gap-1 overflow-x-auto" role="tablist">
-          {TABS.map((t) => (
-            <button
-              key={t.value}
-              role="tab"
-              aria-selected={tab === t.value}
-              onClick={() => setTab(t.value)}
-              className={cn(
-                "relative px-3.5 py-3 text-sm font-medium whitespace-nowrap transition-colors pointer-coarse:min-h-12 pointer-coarse:px-4 pointer-coarse:text-[15px]",
-                tab === t.value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t.label}
-              {t.value === "settle" && math.transfers.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-brand/15 px-1.5 py-0.5 text-[0.68rem] font-semibold text-brand tabular-nums">{math.transfers.length}</span>
-              )}
-              {tab === t.value && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand" />}
-            </button>
-          ))}
-        </div>
-      </nav>
+      <div ref={swipeArea} className="touch-pan-y touch-pinch-zoom">
+        <nav className="no-print sticky top-[env(safe-area-inset-top)] z-20 -mx-4 mt-6 border-b border-border bg-background/85 px-4 backdrop-blur-xl sm:-mx-8 sm:px-8">
+          <div className="flex overflow-x-auto sm:gap-1" role="tablist">
+            {TABS.map((t) => (
+              <button
+                key={t.value}
+                role="tab"
+                aria-selected={tab === t.value}
+                onClick={() => pickTab(t.value)}
+                className={cn(
+                  "relative px-1.5 py-3 text-sm font-medium whitespace-nowrap transition-colors max-sm:flex-auto sm:px-3.5 pointer-coarse:min-h-12 sm:pointer-coarse:px-4 sm:pointer-coarse:text-[15px]",
+                  tab === t.value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {t.label}
+                {t.value === "settle" && math.transfers.length > 0 && (
+                  <span className="ml-1.5 rounded-full bg-brand/15 px-1.5 py-0.5 text-[0.68rem] font-semibold text-brand tabular-nums">{math.transfers.length}</span>
+                )}
+                {tab === t.value && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand" />}
+              </button>
+            ))}
+          </div>
+        </nav>
 
-      <div key={tab} className="rise mt-6">
-        {tab === "overview" && <OverviewTab event={event} math={math} onOpenExpense={openExpense} onGoTo={setTab} onAdd={addExpense} readOnly={readOnly} />}
-        {tab === "expenses" && <ExpensesTab event={event} math={math} onOpenExpense={openExpense} onAdd={addExpense} readOnly={readOnly} />}
-        {tab === "balances" && <BalancesTab event={event} math={math} />}
-        {tab === "settle" && <SettleTab event={event} math={math} run={run} readOnly={readOnly} />}
+        <div ref={swipeContent} className="mt-6">
+          <div key={tab} className={slideFrom === "right" ? "slide-from-right" : slideFrom === "left" ? "slide-from-left" : "rise"}>
+            {tab === "overview" && <OverviewTab event={event} math={math} onOpenExpense={openExpense} onGoTo={pickTab} onAdd={addExpense} readOnly={readOnly} />}
+            {tab === "expenses" && <ExpensesTab event={event} math={math} onOpenExpense={openExpense} onAdd={addExpense} readOnly={readOnly} />}
+            {tab === "balances" && <BalancesTab event={event} math={math} />}
+            {tab === "settle" && <SettleTab event={event} math={math} run={run} readOnly={readOnly} />}
+          </div>
+        </div>
       </div>
 
       {!readOnly && (

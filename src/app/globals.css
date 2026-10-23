@@ -223,6 +223,26 @@
   animation: ms-rise 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+/* Tab switched by swiping: the new tab comes in from the side the finger moved away from. */
+@keyframes ms-slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes ms-slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+@utility slide-from-right {
+  animation: ms-slide-from-right 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@utility slide-from-left {
+  animation: ms-slide-from-left 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
 /*
  * Touch screens (Android / iOS guidelines): targets ≥ 44–48px are set per component with the
  * `pointer-coarse:` variant; these rules cover what every element needs.
