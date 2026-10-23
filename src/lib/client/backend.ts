@@ -35,7 +35,6 @@ export interface Backend {
   deletePerson(id: string): Promise<"deleted" | "hidden">;
   getSettings(): Promise<AppSettings>;
   patchSettings(patch: Partial<AppSettings>): Promise<AppSettings>;
-  loadDemo(): Promise<string>;
   exportBackup(): Promise<BackupFile>;
   importBackup(data: unknown, mode: "merge" | "replace"): Promise<{ events: number; people: number }>;
   clearAll(): Promise<void>;
@@ -84,7 +83,6 @@ const http: Backend = {
   deletePerson: (id) => send<{ result: "deleted" | "hidden" }>(`/api/people/${id}`, undefined, "DELETE").then((r) => r.result),
   getSettings: () => fetch("/api/settings").then((r) => json(r)),
   patchSettings: (patch) => send("/api/settings", patch, "PATCH"),
-  loadDemo: () => send<{ id: string }>("/api/demo").then((r) => r.id),
   exportBackup: () => fetch("/api/backup").then((r) => json(r)),
   importBackup: (data, mode) => send(`/api/backup?mode=${mode}`, data),
   clearAll: () => send("/api/reset", { confirm: "DELETE" }),

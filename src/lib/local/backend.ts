@@ -7,7 +7,6 @@ import { ZodError } from "zod";
 import { setDbProvider } from "../core/sql";
 import * as store from "../core/store";
 import * as service from "../core/service";
-import { createDemoTrip } from "../core/demo";
 import { eventToCsv } from "../csv";
 import { idb, type StoredReceipt } from "./idb";
 import { openLocalDb } from "./sqljs";
@@ -70,7 +69,6 @@ export async function createLocalBackend(): Promise<Backend> {
     deletePerson: (id) => write(() => store.deletePerson(id)),
     getSettings: () => read(() => store.getSettings()),
     patchSettings: (patch) => write(() => service.patchSettings(patch)),
-    loadDemo: () => write(() => createDemoTrip()),
     exportBackup: async () => {
       const data = await read(() => store.exportAll());
       for (const e of data.events) {

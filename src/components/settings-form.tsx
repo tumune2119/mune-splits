@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Download, FolderOpen, Loader2, Moon, Plus, RefreshCw, Sparkles, Sun, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Download, FolderOpen, Loader2, Moon, Plus, RefreshCw, Sun, Trash2, Upload, X } from "lucide-react";
 import { SHOW_UPDATE, findUpdate, updateChannel } from "@/lib/client/updater";
 import { APP_VERSION, RELEASES_PAGE } from "@/lib/updates";
 import { toast } from "sonner";
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, NativeSelect, Segmented, inputClass } from "@/components/fields";
 import { useApp } from "@/components/app-provider";
-import { loadDemo, mutate, patchSettings } from "@/lib/client/api";
+import { mutate, patchSettings } from "@/lib/client/api";
 import { backend, invalidate } from "@/lib/client/backend";
 import { saveText } from "@/lib/client/platform";
 import { CURRENCIES, LOCALES, formatMoney } from "@/lib/money";
@@ -19,7 +18,6 @@ import { cn } from "@/lib/utils";
 import type { AppSettings, Category } from "@/lib/types";
 
 export function SettingsForm({ dataPath }: { dataPath: string }) {
-  const router = useRouter();
   const { settings, setSettings, theme, info } = useApp();
   const [name, setName] = useState(settings.myName);
   const [categories, setCategories] = useState<Category[]>(settings.categories);
@@ -183,23 +181,6 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
                 }
               }}
             />
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              disabled={busy === "demo"}
-              onClick={async () => {
-                setBusy("demo");
-                try {
-                  const id = await loadDemo();
-                  router.push(`/event?id=${encodeURIComponent(id)}`);
-                } catch (err) {
-                  toast.error((err as Error).message);
-                  setBusy(null);
-                }
-              }}
-            >
-              {busy === "demo" ? <Loader2 className="animate-spin" /> : <Sparkles />} Load demo trip
-            </Button>
           </div>
           <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
             <FolderOpen className="mt-0.5 size-3.5 shrink-0" />

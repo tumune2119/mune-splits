@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { CalendarRange, Moon, Settings, Sun, Users } from "lucide-react";
 import { LogoMark, Wordmark } from "@/components/logo";
@@ -10,6 +10,7 @@ import { Kbd } from "@/components/kbd";
 import { useApp } from "@/components/app-provider";
 import { QuitButton, StoppedScreen, useAppPresence } from "@/components/app-lifetime";
 import { asset, TARGET } from "@/lib/client/backend";
+import { inAppRoute } from "@/lib/deep-links";
 import { cn } from "@/lib/utils";
 
 /** Fired by the global "N" shortcut; the current page decides what "new" means. */
@@ -122,9 +123,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 /**
  * Android/iOS app only: dark/light status bar to match the theme, and the Android back button
- * closes dialogs first, then goes back, then leaves the app from the home screen.
+ * closes dialogs first, then goes back, then leaves the app from the home screen. Invite links that
+ * Android hands to the app (see AndroidManifest.xml) open the join screen.
  */
 function useNativeShell(native: boolean, theme: "dark" | "light") {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!native) return;
+    const open = (url: string | undefined) => {
+      const route = url ? inAppRoute(url) : null;
+      if (route) router.push(route);
+    };
+    let remove: (() => void) | undefined;
+    import("@capacitor/app").then(async ({ App }) => {
+      const handle = App.addListener("appUrlOpen", ({ url }) => open(url));
+      remove = () => void handle.then((h) => h.remove());
+      // Started by tapping a link: handle it once (not again if the page reloads).
+      const launch = (await App.getLaunchUrl())?.url;
+      if (launch && sessionStorage.getItem("mune-launch-url") !== launch) {
+        sessionStorage.setItem("mune-launch-url", launch);
+        open(launch);
+      }
+    });
+    return () => remove?.();
+  }, [native, router]);
+
   useEffect(() => {
     if (!native) return;
     import("@capacitor/status-bar")

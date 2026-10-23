@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CheckCircle2, Globe, Link as LinkIcon, Loader2, Plus, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { CheckCircle2, Globe, Link as LinkIcon, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/kbd";
 import { AvatarStack } from "@/components/avatar";
@@ -16,7 +14,6 @@ import { NEW_EVENT } from "@/components/app-shell";
 import { EventFormDialog } from "@/components/events/event-form-dialog";
 import { JoinDialog } from "@/components/shared/join-dialog";
 import { sharingEnabled } from "@/lib/shared/config";
-import { loadDemo } from "@/lib/client/api";
 import { formatRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { EventStatus, EventSummary, Person } from "@/lib/types";
@@ -24,12 +21,10 @@ import type { EventStatus, EventSummary, Person } from "@/lib/types";
 type Filter = EventStatus | "all";
 
 export function EventsHome({ events, people }: { events: EventSummary[]; people: Person[] }) {
-  const router = useRouter();
   const { settings } = useApp();
   const [filter, setFilter] = useState<Filter>("active");
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [loadingDemo, setLoadingDemo] = useState(false);
 
   useEffect(() => {
     const open = () => setCreating(true);
@@ -58,18 +53,6 @@ export function EventsHome({ events, people }: { events: EventSummary[]; people:
     };
   }, [events, settings.defaultCurrency]);
 
-  const demo = async () => {
-    setLoadingDemo(true);
-    try {
-      const id = await loadDemo();
-      toast.success("Demo trip loaded");
-      router.push(`/event?id=${encodeURIComponent(id)}`);
-    } catch (err) {
-      toast.error((err as Error).message);
-      setLoadingDemo(false);
-    }
-  };
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -91,7 +74,7 @@ export function EventsHome({ events, people }: { events: EventSummary[]; people:
       <JoinDialog open={joining} onOpenChange={setJoining} />
 
       {events.length === 0 ? (
-        <EmptyHome onCreate={() => setCreating(true)} onDemo={demo} loadingDemo={loadingDemo} />
+        <EmptyHome onCreate={() => setCreating(true)} />
       ) : (
         <>
           <section className="mb-8 grid gap-3 sm:grid-cols-3">
@@ -219,7 +202,7 @@ export function BalancePill({ net, currency }: { net: number | null; currency: s
   );
 }
 
-function EmptyHome({ onCreate, onDemo, loadingDemo }: { onCreate: () => void; onDemo: () => void; loadingDemo: boolean }) {
+function EmptyHome({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="surface-hero rise relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:py-20">
       <LogoMark className="mx-auto mb-6 size-16 drop-shadow-[0_0_24px_rgb(255_148_85/0.45)]" />
@@ -230,9 +213,6 @@ function EmptyHome({ onCreate, onDemo, loadingDemo }: { onCreate: () => void; on
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button className="h-11 rounded-xl px-5" onClick={onCreate}>
           <Plus /> Create an event
-        </Button>
-        <Button variant="outline" className="h-11 rounded-xl px-5" onClick={onDemo} disabled={loadingDemo}>
-          {loadingDemo ? <Loader2 className="animate-spin" /> : <Sparkles />} Load demo trip
         </Button>
       </div>
       <p className="mt-6 text-xs text-muted-foreground">Everything stays on this computer. No accounts, no cloud.</p>

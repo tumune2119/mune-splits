@@ -33,7 +33,7 @@
   - Plus **multiple payers** on one expense, notes, and receipt photos.
 - **Balances:** see who owes whom as the fewest possible payments, or switch to the raw debts.
 - **Settle up:** one click on **Mark as paid**, partial payments, undo, then lock the event as **Settled**.
-- **Shared events (live):** tap **Share** on an event to get an invite link. Friends open it, tap who they are, and everyone sees the same expenses and payments update live, even across phones and computers. No sign-ups.
+- **Shared events (live):** tap **Share** on an event to get an invite link. Friends open it, tap who they are, and everyone sees the same expenses and payments update live, even across phones and computers. No sign-ups. On Android, invite links open straight in the app when it's installed (and in the browser when it isn't).
 - **Share it:** a polished **PDF report** ([example](docs/sample-report.pdf)), a print view, a WhatsApp-ready text summary, or CSV.
 - **Dark mode by default** with a light theme, installable as an app, and it works offline.
 
@@ -49,7 +49,7 @@
    If Windows says *"Windows protected your PC"*, click **More info → Run anyway**. The app isn't signed with a paid certificate, but all the code is here to read.
 4. MUNE Splits opens in its own window. You'll also have a desktop and Start menu shortcut.
 
-Nothing else to install: Node.js comes bundled, and no admin rights are needed. To see how it works, try **Settings → Load demo trip**.
+Nothing else to install: Node.js comes bundled, and no admin rights are needed.
 
 - **Update:** download the new zip and run `Install MUNE Splits.cmd` again. Your data is kept.
 - **Uninstall:** **Settings → Apps → MUNE Splits → Uninstall**. You'll be asked whether to keep your data.

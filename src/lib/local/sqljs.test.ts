@@ -6,7 +6,7 @@ import { adapt } from "./sqljs";
 import { initSchema, setDbProvider, type SqlDb } from "../core/sql";
 import * as store from "../core/store";
 import { patchSettings, parseBackup } from "../core/service";
-import { createDemoTrip } from "../core/demo";
+import { createDemoTrip } from "../core/sample-trip.fixture";
 import { eventMath } from "../event-math";
 
 let raw: Database;

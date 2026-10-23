@@ -7,7 +7,8 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { WhoAreYou } from "@/components/shared/who-are-you";
-import { parseShareInput, sharingEnabled } from "@/lib/shared/config";
+import { parseShareInput, shareLink, sharingEnabled } from "@/lib/shared/config";
+import { androidIntent } from "@/lib/deep-links";
 import { getMembership, listMemberships, onMembershipsChanged, removeMembership, upsertMembership } from "@/lib/shared/memberships";
 import type { EventDetail, EventSummary } from "@/lib/types";
 import { useData } from "@/lib/client/api";
@@ -196,13 +197,37 @@ export function SharedEventScreen({ sid }: { sid: string }) {
 /** /join?e=<share id>: the link people receive. Remembers the event, then opens it. */
 export function JoinScreen() {
   const router = useRouter();
-  const sid = parseShareInput(useSearchParams().get("e") ?? "");
+  const params = useSearchParams();
+  const sid = parseShareInput(params.get("e") ?? "");
+  const { info } = useApp();
+  // Website on an Android phone: try the app first (it comes back here with web=1 if it isn't installed).
+  const [appLink] = useState(() =>
+    sid && !info.native && params.get("web") !== "1" && typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent)
+      ? androidIntent(shareLink(sid), `${shareLink(sid)}&web=1`)
+      : null,
+  );
   useEffect(() => {
     if (!sid || !sharingEnabled()) return;
+    if (appLink) return void (window.location.href = appLink);
     if (!getMembership(sid)) upsertMembership({ sid, me: null, name: "" });
     router.replace(`/event?s=${encodeURIComponent(sid)}`);
-  }, [sid, router]);
+  }, [sid, router, appLink]);
   if (!sharingEnabled()) return <SharingOff />;
+  if (sid && appLink) {
+    return (
+      <div className="mx-auto flex max-w-sm flex-col items-center gap-3 px-6 py-20 text-center">
+        <Loader2 className="size-6 animate-spin text-brand" />
+        <p className="font-medium">Opening MUNE Splits…</p>
+        <p className="text-sm text-muted-foreground">If nothing happens, pick one:</p>
+        <Button asChild className="mt-2 h-12 w-full rounded-xl">
+          <a href={appLink}>Open in the app</a>
+        </Button>
+        <Button asChild variant="outline" className="h-12 w-full rounded-xl">
+          <a href={`${shareLink(sid)}&web=1`}>Continue in the browser</a>
+        </Button>
+      </div>
+    );
+  }
   if (!sid) {
     return (
       <div className="mx-auto max-w-md px-6 py-20 text-center">

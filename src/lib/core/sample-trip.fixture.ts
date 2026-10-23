@@ -2,6 +2,7 @@ import { applyEventAction, createEvent, ensurePerson } from "./store";
 import type { ExpenseFields } from "../event-actions";
 
 /**
+ * Test data only (unit tests), not shipped in the app.
  * "Goa Trip": 4 people with weighted splits (Priya counts as 2, Rohan as 0.5 for food), a multi-payer
  * villa, every split mode, and one partial settlement. Amounts are in paise.
  */

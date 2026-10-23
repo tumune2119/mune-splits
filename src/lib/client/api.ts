@@ -15,7 +15,6 @@ export const patchEvent = async (id: string, action: EventAction) => changed((aw
 export const createEventRequest = async (data: NewEvent) => changed((await backend()).createEvent(data));
 export const deleteEventRequest = async (id: string) => changed((await backend()).deleteEvent(id));
 export const patchSettings = async (data: Partial<AppSettings>) => (await backend()).patchSettings(data);
-export const loadDemo = async () => changed((await backend()).loadDemo());
 export const uploadReceipt = async (file: File) => (await backend()).uploadReceipt(file);
 export async function mutate<T>(fn: (b: Backend) => Promise<T>): Promise<T> {
   return changed(fn(await backend()));
