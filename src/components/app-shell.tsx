@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { CalendarRange, Moon, Settings, Sun, Users } from "lucide-react";
 import { LogoMark, Wordmark } from "@/components/logo";
+import { UpdatePrompt } from "@/components/update-prompt";
 import { Kbd } from "@/components/kbd";
 import { useApp } from "@/components/app-provider";
 import { QuitButton, StoppedScreen, useAppPresence } from "@/components/app-lifetime";
@@ -113,6 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
+      <UpdatePrompt />
       {stopped && <StoppedScreen />}
     </div>
   );

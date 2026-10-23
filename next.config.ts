@@ -1,4 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { NextConfig } from "next";
+
+// The app shows its version and compares it with the latest GitHub release (update prompts).
+const { version } = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { version: string };
 
 /**
  * Three builds from one codebase:
@@ -14,6 +19,7 @@ const nextConfig: NextConfig = {
   // Native module stays out of the bundle.
   serverExternalPackages: ["better-sqlite3"],
   poweredByHeader: false,
+  env: { NEXT_PUBLIC_APP_VERSION: version },
   ...(target === "release"
     ? {
         output: "standalone" as const,

@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Download, FolderOpen, Loader2, Moon, Plus, Sparkles, Sun, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Download, FolderOpen, Loader2, Moon, Plus, RefreshCw, Sparkles, Sun, Trash2, Upload, X } from "lucide-react";
+import { SHOW_UPDATE, findUpdate, updateChannel } from "@/lib/client/updater";
+import { APP_VERSION, RELEASES_PAGE } from "@/lib/updates";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -216,6 +218,45 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
               A single event can be exported as CSV from its ⋯ menu.
             </span>
           </p>
+        </Section>
+
+        <Section title="About & updates">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm">
+                MUNE Splits <span className="money font-medium">{APP_VERSION}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {updateChannel(info.platform) === "none"
+                  ? "This web app updates itself whenever it's opened online."
+                  : "You'll be told when a new version is out."}
+              </p>
+            </div>
+            {updateChannel(info.platform) !== "none" && (
+              <Button
+                variant="outline"
+                className="rounded-xl"
+                disabled={busy === "update"}
+                onClick={async () => {
+                  setBusy("update");
+                  try {
+                    const release = await findUpdate(true);
+                    if (release) window.dispatchEvent(new CustomEvent(SHOW_UPDATE, { detail: release }));
+                    else toast.success(`You're up to date (${APP_VERSION}).`);
+                  } catch (err) {
+                    toast.error((err as Error).message);
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+              >
+                {busy === "update" ? <Loader2 className="animate-spin" /> : <RefreshCw />} Check for updates
+              </Button>
+            )}
+          </div>
+          <a href={RELEASES_PAGE} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-11 items-center text-sm text-brand hover:underline">
+            All releases and downloads
+          </a>
         </Section>
 
         <Section title="Danger zone" danger>
