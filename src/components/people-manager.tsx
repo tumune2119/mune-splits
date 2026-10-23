@@ -92,7 +92,7 @@ function PersonRow({ person: p, call }: { person: PersonWithStats; call: (p: Pro
   return (
     <li className={cn("flex items-center gap-3 px-4 py-3", p.hidden && "opacity-60")}>
       <div className="relative">
-        <button onClick={() => setPicking((x) => !x)} aria-label="Change colour" className="rounded-full transition-transform hover:scale-105">
+        <button onClick={() => setPicking((x) => !x)} aria-label="Change colour" className="rounded-full transition-transform hover:scale-105 pointer-coarse:-m-1 pointer-coarse:p-1">
           <Avatar person={p} size={38} />
         </button>
         {picking && (
@@ -118,7 +118,7 @@ function PersonRow({ person: p, call }: { person: PersonWithStats; call: (p: Pro
           onChange={(e) => setName(e.target.value)}
           onBlur={saveName}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-          className="w-full rounded-md bg-transparent px-1 py-0.5 font-medium outline-none hover:bg-accent/50 focus:bg-accent/60"
+          className="w-full rounded-md bg-transparent px-1 py-0.5 font-medium outline-none hover:bg-accent/50 focus:bg-accent/60 pointer-coarse:min-h-11 pointer-coarse:rounded-lg pointer-coarse:px-2"
           aria-label="Name"
         />
         <p className="px-1 text-xs text-muted-foreground">

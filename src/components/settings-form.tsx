@@ -106,7 +106,7 @@ export function SettingsForm({ dataPath }: { dataPath: string }) {
               <li key={i} className="flex items-center gap-2">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: SERIES[theme][i] ?? SERIES_OVERFLOW }} />
                 <input
-                  className={cn(inputClass, "w-14 text-center")}
+                  className={cn(inputClass, "w-14 shrink-0 text-center pointer-coarse:px-1")}
                   value={c.emoji}
                   onChange={(e) => setCategories((cs) => cs.map((x, j) => (j === i ? { ...x, emoji: e.target.value } : x)))}
                   aria-label="Emoji"

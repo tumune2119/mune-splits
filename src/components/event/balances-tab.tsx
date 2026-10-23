@@ -18,7 +18,7 @@ export function BalancesTab({ event, math }: { event: EventDetail; math: EventMa
   const transfers = view === "simplified" ? math.transfers : math.rawTransfers;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
       <section className="surface rounded-2xl p-5">
         <h2 className="font-semibold">Balances</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Paid − share, adjusted for payments already made.</p>

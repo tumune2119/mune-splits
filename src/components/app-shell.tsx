@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-24 md:pb-0">{children}</main>
+      <main className="min-w-0 flex-1 pb-28 md:pb-0">{children}</main>
 
       <nav className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-sidebar-border bg-sidebar/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
         {NAV.map(({ href, label, icon: Icon, match }) => {
@@ -101,9 +101,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={href}
               href={href}
-              className={cn("flex flex-col items-center gap-1 py-2.5 text-[0.7rem] font-medium", active ? "text-brand" : "text-muted-foreground")}
+              aria-current={active ? "page" : undefined}
+              className={cn("flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-medium", active ? "text-foreground" : "text-muted-foreground")}
             >
-              <Icon className="size-5" />
+              {/* Material 3 navigation bar: a pill behind the active icon. */}
+              <span className={cn("grid h-8 w-16 place-items-center rounded-full transition-colors", active && "bg-brand/18 text-brand")}>
+                <Icon className="size-[22px]" />
+              </span>
               {label}
             </Link>
           );

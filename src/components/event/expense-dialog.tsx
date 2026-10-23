@@ -190,7 +190,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
     <>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[94dvh] flex-col gap-0 overflow-hidden rounded-2xl border border-border p-0 sm:max-w-xl max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none"
+        className="flex max-h-[94dvh] flex-col gap-0 overflow-clip rounded-2xl border border-border p-0 sm:max-w-xl max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none max-sm:overflow-clip max-sm:pt-4 max-sm:pb-0"
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
@@ -201,7 +201,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <DialogTitle className="text-base font-semibold">{expense ? "Edit expense" : "Add expense"}</DialogTitle>
           <DialogDescription className="sr-only">Amount, who paid and how to split it.</DialogDescription>
-          <button onClick={() => onOpenChange(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Close">
+          <button onClick={() => onOpenChange(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground pointer-coarse:-mr-2 pointer-coarse:grid pointer-coarse:size-11 pointer-coarse:place-items-center" aria-label="Close">
             <X className="size-4" />
           </button>
         </div>
@@ -209,7 +209,8 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
           {/* Amount first */}
           <div className="text-center">
-            <div className="inline-flex items-baseline gap-1">
+            {/* The whole amount area is tappable, not just the digits. */}
+            <label className="inline-flex min-h-16 min-w-40 cursor-text items-baseline justify-center gap-1">
               <span className="text-3xl font-medium text-muted-foreground">{symbol}</span>
               <input
                 ref={amountRef}
@@ -222,7 +223,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
                 className="money max-w-[70vw] bg-transparent text-center text-5xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground/40"
                 style={{ width: `${Math.max(2, amountStr.length + 1)}ch` }}
               />
-            </div>
+            </label>
             {showErrors && !amount && <p className="mt-1 text-xs text-owe">Enter an amount</p>}
           </div>
 
@@ -244,7 +245,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
                   type="button"
                   onClick={() => setCategory(c.name)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors pointer-coarse:min-h-11 pointer-coarse:px-4",
                     category === c.name ? "border-brand/60 bg-brand/12 text-foreground" : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -262,7 +263,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
           <section className="space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Paid by</span>
-              <button type="button" onClick={toggleMulti} className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline">
+              <button type="button" onClick={toggleMulti} className="inline-flex items-center gap-1 text-xs font-medium pointer-coarse:-my-3 pointer-coarse:min-h-11 pointer-coarse:px-2 pointer-coarse:text-sm text-brand hover:underline">
                 <Users className="size-3.5" />
                 {multiPayer ? "Single payer" : "Multiple payers"}
               </button>
@@ -275,7 +276,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
                     key={p.id}
                     onClick={() => setPayerId(p.id)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm transition-colors",
+                      "inline-flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm transition-colors pointer-coarse:min-h-11 pointer-coarse:pr-4 pointer-coarse:pl-1.5",
                       payerId === p.id ? "border-brand/60 bg-brand/12 text-foreground" : "border-border text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -361,7 +362,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
                           onChange={(e) => setPercents((m) => ({ ...m, [p.id]: e.target.value.replace(/[^\d.]/g, "") }))}
                           onDoubleClick={() => fillRemainder(p.id)}
                           placeholder="0"
-                          className={cn(inputClass, "money h-9 w-24 pr-7 text-right")}
+                          className={cn(inputClass, "money h-9 w-24 pr-7 text-right pointer-coarse:h-11")}
                           aria-label={`${p.name} percent`}
                         />
                         <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-muted-foreground">%</span>
@@ -397,7 +398,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
                   </span>
                   <button
                     type="button"
-                    className="font-medium text-brand hover:underline"
+                    className="font-medium text-brand hover:underline pointer-coarse:-my-3 pointer-coarse:min-h-11 pointer-coarse:px-2"
                     onClick={() => setIncluded(Object.fromEntries(people.map((p) => [p.id, split.length !== people.length])))}
                   >
                     {split.length === people.length ? "Select none" : "Select all"}
@@ -427,7 +428,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
                   </button>
                 </div>
               ) : (
-                <label className="grid size-16 cursor-pointer place-items-center rounded-xl border border-dashed border-input text-muted-foreground transition-colors hover:border-brand/60 hover:text-brand">
+                <label className="grid size-16 pointer-coarse:size-[72px] cursor-pointer place-items-center rounded-xl border border-dashed border-input text-muted-foreground transition-colors hover:border-brand/60 hover:text-brand">
                   {uploading ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
                   <input type="file" accept="image/*,application/pdf" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
                 </label>
@@ -436,7 +437,7 @@ function ExpenseForm({ onOpenChange, event, expense, onSubmit, onDelete }: Props
           </div>
         </div>
 
-        <div className="flex items-center gap-2 border-t border-border bg-muted/40 px-5 py-3.5">
+        <div className="flex items-center gap-2 border-t border-border bg-muted/40 px-5 py-3.5 max-sm:pb-[calc(0.875rem+env(safe-area-inset-bottom))]">
           {expense && onDelete && (
             <Button type="button" variant="ghost" size="icon-lg" className="rounded-xl text-owe hover:text-owe" onClick={onDelete} aria-label="Delete expense">
               <Trash2 />
@@ -500,7 +501,7 @@ function MoneyInput({ symbol, value, onChange, onDoubleClick }: { symbol: string
         onChange={(e) => onChange(e.target.value.replace(/[^\d.,]/g, ""))}
         onDoubleClick={onDoubleClick}
         placeholder="0"
-        className={cn(inputClass, "money h-9 w-32 pl-7 text-right")}
+        className={cn(inputClass, "money h-9 w-32 pl-7 text-right pointer-coarse:h-11")}
       />
     </span>
   );
@@ -510,14 +511,15 @@ function WeightControl({ value, onChange }: { value: string; onChange: (v: strin
   const n = Number(value) || 0;
   const step = (d: number) => onChange(trimNum(Math.max(0, Math.round((n + d) * 2) / 2)));
   return (
-    <span className="flex items-center gap-1">
+    // Phones: controls get their own full-width row under the name and amount.
+    <span className="flex items-center gap-1 max-sm:order-last max-sm:w-full max-sm:gap-2">
       {WEIGHT_CHIPS.map((c) => (
         <button
           type="button"
           key={c.value}
           onClick={() => onChange(c.value)}
           className={cn(
-            "h-7 min-w-7 rounded-lg border px-1.5 text-xs font-semibold transition-colors",
+            "h-7 min-w-7 rounded-lg border px-1.5 text-xs font-semibold transition-colors pointer-coarse:h-11 pointer-coarse:min-w-11 pointer-coarse:rounded-xl pointer-coarse:text-sm",
             Number(c.value) === n ? "border-brand bg-brand text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground",
           )}
         >
@@ -525,17 +527,17 @@ function WeightControl({ value, onChange }: { value: string; onChange: (v: strin
         </button>
       ))}
       <span className="ml-1 flex items-center rounded-lg border border-input">
-        <button type="button" onClick={() => step(-0.5)} className="grid h-7 w-6 place-items-center text-muted-foreground hover:text-foreground" aria-label="Less">
+        <button type="button" onClick={() => step(-0.5)} className="grid h-7 w-6 pointer-coarse:h-11 pointer-coarse:w-11 place-items-center text-muted-foreground hover:text-foreground" aria-label="Less">
           <Minus className="size-3" />
         </button>
         <input
           inputMode="decimal"
           value={value}
           onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, ""))}
-          className="money h-7 w-10 bg-transparent text-center text-sm outline-none"
+          className="money h-7 w-10 pointer-coarse:h-11 pointer-coarse:w-12 bg-transparent text-center text-sm pointer-coarse:text-base outline-none"
           aria-label="Weight"
         />
-        <button type="button" onClick={() => step(0.5)} className="grid h-7 w-6 place-items-center text-muted-foreground hover:text-foreground" aria-label="More">
+        <button type="button" onClick={() => step(0.5)} className="grid h-7 w-6 pointer-coarse:h-11 pointer-coarse:w-11 place-items-center text-muted-foreground hover:text-foreground" aria-label="More">
           <Plus className="size-3" />
         </button>
       </span>

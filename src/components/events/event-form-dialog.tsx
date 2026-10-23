@@ -174,7 +174,7 @@ function EventForm({ onOpenChange, people, event, onSaved, saveUpdate }: Props) 
                         key={p.id}
                         onClick={() => setSelected((s) => (on ? s.filter((x) => x !== p.id) : [...s, p.id]))}
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm transition-colors",
+                          "inline-flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm transition-colors pointer-coarse:min-h-11 pointer-coarse:pr-4 pointer-coarse:pl-1.5",
                           on ? "border-brand/50 bg-brand/12 text-foreground" : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
                         )}
                       >

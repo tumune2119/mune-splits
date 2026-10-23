@@ -56,7 +56,7 @@ export function OverviewTab({
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="surface-hero relative overflow-hidden rounded-2xl p-6">
           <p className="text-sm text-muted-foreground">Total spent</p>
           <Money value={math.total} currency={cur} countUp className="mt-1 block text-[2.6rem] leading-tight font-semibold tracking-tight" />
@@ -96,14 +96,14 @@ export function OverviewTab({
             <p className="mt-2 text-sm text-muted-foreground">You&apos;re not part of this event.</p>
           )}
           {math.transfers.length > 0 && (
-            <button onClick={() => onGoTo("settle")} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
+            <button onClick={() => onGoTo("settle")} className="mt-4 inline-flex items-center gap-1 text-sm font-medium pointer-coarse:-mx-2 pointer-coarse:mt-2 pointer-coarse:min-h-12 pointer-coarse:px-2 pointer-coarse:text-[15px] text-brand hover:underline">
               {math.transfers.length} payment{math.transfers.length === 1 ? "" : "s"} to settle up <ArrowRight className="size-3.5" />
             </button>
           )}
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
         <CategoryDonut event={event} math={math} />
         <PersonBars event={event} math={math} />
       </section>
@@ -111,7 +111,7 @@ export function OverviewTab({
       <section className="surface rounded-2xl p-3">
         <div className="flex items-center justify-between px-3 pt-2 pb-1">
           <h2 className="font-semibold">Recent expenses</h2>
-          <button onClick={() => onGoTo("expenses")} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <button onClick={() => onGoTo("expenses")} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground pointer-coarse:-my-2 pointer-coarse:-mr-2 pointer-coarse:min-h-11 pointer-coarse:px-2">
             See all <ArrowRight className="size-3.5" />
           </button>
         </div>

@@ -43,7 +43,7 @@ export function SettleTab({ event, math, run, readOnly }: { event: EventDetail; 
   };
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
       <div className="space-y-5">
         {math.settled && event.expenses.length > 0 && event.status !== "settled" && (
           <div className="surface-hero rounded-2xl p-6 text-center">

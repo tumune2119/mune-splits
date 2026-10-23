@@ -84,7 +84,7 @@ function LocalEventScreen() {
     return (
       <div className="mx-auto max-w-md px-6 py-20 text-center">
         <p className="font-medium">This event doesn&apos;t exist any more</p>
-        <Link href="/" className="mt-3 inline-block text-sm font-medium text-brand hover:underline">
+        <Link href="/" className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline">
           Back to events
         </Link>
       </div>

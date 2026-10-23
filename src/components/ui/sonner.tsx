@@ -2,10 +2,20 @@
 
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
+import { useSyncExternalStore } from "react"
 import { useApp } from "@/components/app-provider"
+
+const PHONE = "(max-width: 639px)"
+const subscribe = (cb: () => void) => {
+  const m = matchMedia(PHONE)
+  m.addEventListener("change", cb)
+  return () => m.removeEventListener("change", cb)
+}
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme } = useApp()
+  // Phones: notices at the top (like iOS banners), so they never cover bottom sheets and their buttons.
+  const phone = useSyncExternalStore(subscribe, () => matchMedia(PHONE).matches, () => false)
 
   return (
     <Sonner
@@ -28,6 +38,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{ classNames: { toast: "cn-toast" } }}
       {...props}
+      {...(phone ? { position: "top-center" as const, mobileOffset: { top: "calc(8px + env(safe-area-inset-top))" } } : {})}
     />
   )
 }

@@ -25,14 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ConfirmButton } from "@/components/confirm-button";
+import { ActionMenu } from "@/components/action-menu";
 import { AvatarStack } from "@/components/avatar";
 import { Kbd } from "@/components/kbd";
 import { useApp } from "@/components/app-provider";
@@ -208,7 +201,7 @@ export function EventPage({ initial, people, openInvite = false }: { initial: Ev
 
   const page = (
     <div className="mx-auto max-w-6xl px-4 pt-5 pb-28 sm:px-8 sm:pt-8">
-      <Link href="/" className="no-print mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/" className="no-print mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground pointer-coarse:-mx-2 pointer-coarse:mb-3 pointer-coarse:min-h-12 pointer-coarse:px-2 pointer-coarse:text-base">
         <ArrowLeft className="size-4" /> Events
       </Link>
 
@@ -248,7 +241,7 @@ export function EventPage({ initial, people, openInvite = false }: { initial: Ev
         <div className="no-print flex items-center gap-2 max-sm:w-full max-sm:justify-end">
           <button
             onClick={() => setPeopleOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-border px-2 py-1.5 transition-colors hover:bg-accent"
+            className="flex items-center gap-2 rounded-xl border border-border px-2 py-1.5 transition-colors hover:bg-accent pointer-coarse:min-h-12 pointer-coarse:px-3"
             aria-label="Manage people"
           >
             <AvatarStack people={event.participants} max={5} size={26} />
@@ -264,87 +257,81 @@ export function EventPage({ initial, people, openInvite = false }: { initial: Ev
             {exporting ? <Loader2 className="animate-spin" /> : <FileDown />}
             <span className="hidden sm:inline">Export PDF</span>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <ActionMenu
+            title={event.name}
+            trigger={
               <Button variant="outline" size="icon-lg" className="size-10 rounded-xl" aria-label="More actions">
                 <MoreHorizontal />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem disabled={readOnly} onSelect={() => setEditEvent(true)}>
-                <Pencil /> Edit details
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={copySummary}>
-                <ClipboardCopy /> {info.platform === "desktop" ? "Copy summary" : "Share summary"}
-              </DropdownMenuItem>
-              {!info.native && !shared && (
-                <DropdownMenuItem onSelect={() => window.open(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/event/print?id=${encodeURIComponent(event.id)}`, "_blank")}>
-                  <Printer /> Print view
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onSelect={exportCsv}>
-                <FileSpreadsheet /> Export CSV
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {event.status === "settled" ? (
-                <DropdownMenuItem onSelect={() => run({ type: "set-status", status: "active" }, "Event reopened")}>
-                  <RotateCcw /> Reopen event
-                </DropdownMenuItem>
-              ) : event.status === "archived" ? (
-                <DropdownMenuItem onSelect={() => run({ type: "set-status", status: "active" }, "Moved back to active")}>
-                  <ArchiveRestore /> Unarchive
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onSelect={() => run({ type: "set-status", status: "archived" }, "Event archived")}>
-                  <Archive /> Archive
-                </DropdownMenuItem>
-              )}
-              {shared && (
-                <ConfirmButton
-                  title={`Leave “${event.name}”?`}
-                  description="It disappears from this device only. Everyone else keeps it, and you can rejoin with the link."
-                  confirmLabel="Leave"
-                  onConfirm={() => {
-                    removeMembership(shared.sid);
-                    toast.success("You left the event");
-                    router.push("/");
-                  }}
-                >
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <LogOut /> Leave event
-                  </DropdownMenuItem>
-                </ConfirmButton>
-              )}
-              <ConfirmButton
-                title={shared ? `Delete “${event.name}” for everyone?` : `Delete “${event.name}”?`}
-                description={
-                  shared
+            }
+            actions={[
+              { key: "edit", label: "Edit details", icon: <Pencil />, disabled: readOnly, onSelect: () => setEditEvent(true) },
+              { key: "summary", label: info.platform === "desktop" ? "Copy summary" : "Share summary", icon: <ClipboardCopy />, onSelect: copySummary },
+              ...(!info.native && !shared
+                ? [
+                    {
+                      key: "print",
+                      label: "Print view",
+                      icon: <Printer />,
+                      onSelect: () => window.open(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/event/print?id=${encodeURIComponent(event.id)}`, "_blank"),
+                    },
+                  ]
+                : []),
+              { key: "csv", label: "Export CSV", icon: <FileSpreadsheet />, onSelect: exportCsv },
+              event.status === "settled"
+                ? { key: "status", group: true, label: "Reopen event", icon: <RotateCcw />, onSelect: () => void run({ type: "set-status", status: "active" }, "Event reopened") }
+                : event.status === "archived"
+                  ? { key: "status", group: true, label: "Unarchive", icon: <ArchiveRestore />, onSelect: () => void run({ type: "set-status", status: "active" }, "Moved back to active") }
+                  : { key: "status", group: true, label: "Archive", icon: <Archive />, onSelect: () => void run({ type: "set-status", status: "archived" }, "Event archived") },
+              ...(shared
+                ? [
+                    {
+                      key: "leave",
+                      label: "Leave event",
+                      icon: <LogOut />,
+                      confirm: {
+                        title: `Leave “${event.name}”?`,
+                        description: "It disappears from this device only. Everyone else keeps it, and you can rejoin with the link.",
+                        confirmLabel: "Leave",
+                        onConfirm: () => {
+                          removeMembership(shared.sid);
+                          toast.success("You left the event");
+                          router.push("/");
+                        },
+                      },
+                    },
+                  ]
+                : []),
+              {
+                key: "delete",
+                label: shared ? "Delete for everyone" : "Delete event",
+                icon: <Trash2 />,
+                destructive: true,
+                confirm: {
+                  title: shared ? `Delete “${event.name}” for everyone?` : `Delete “${event.name}”?`,
+                  description: shared
                     ? "Everyone in the group loses it, with all its expenses and payments. Export a PDF first if anyone wants a record."
-                    : "All its expenses and payments are deleted for good. Export a PDF or backup first if you want to keep a record."
-                }
-                confirmLabel={shared ? "Delete for everyone" : "Delete event"}
-                destructive
-                onConfirm={async () => {
-                  try {
-                    if (shared) {
-                      await (await import("@/lib/shared/client")).deleteSharedEvent(shared.sid);
-                      removeMembership(shared.sid);
-                    } else {
-                      await deleteEventRequest(event.id);
+                    : "All its expenses and payments are deleted for good. Export a PDF or backup first if you want to keep a record.",
+                  confirmLabel: shared ? "Delete for everyone" : "Delete event",
+                  destructive: true,
+                  onConfirm: async () => {
+                    try {
+                      if (shared) {
+                        await (await import("@/lib/shared/client")).deleteSharedEvent(shared.sid);
+                        removeMembership(shared.sid);
+                      } else {
+                        await deleteEventRequest(event.id);
+                      }
+                      toast.success("Event deleted");
+                      router.push("/");
+                    } catch (err) {
+                      toast.error(friendlyError(err));
                     }
-                    toast.success("Event deleted");
-                    router.push("/");
-                  } catch (err) {
-                    toast.error(friendlyError(err));
-                  }
-                }}
-              >
-                <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
-                  <Trash2 /> {shared ? "Delete for everyone" : "Delete event"}
-                </DropdownMenuItem>
-              </ConfirmButton>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  },
+                },
+              },
+            ]}
+          />
         </div>
       </header>
 
@@ -369,7 +356,7 @@ export function EventPage({ initial, people, openInvite = false }: { initial: Ev
               aria-selected={tab === t.value}
               onClick={() => setTab(t.value)}
               className={cn(
-                "relative px-3.5 py-3 text-sm font-medium whitespace-nowrap transition-colors",
+                "relative px-3.5 py-3 text-sm font-medium whitespace-nowrap transition-colors pointer-coarse:min-h-12 pointer-coarse:px-4 pointer-coarse:text-[15px]",
                 tab === t.value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -393,7 +380,7 @@ export function EventPage({ initial, people, openInvite = false }: { initial: Ev
       {!readOnly && (
         <button
           onClick={addExpense}
-          className="no-print group fixed right-5 bottom-24 z-30 flex items-center gap-2 rounded-2xl bg-primary p-4 sm:py-3.5 sm:pr-5 sm:pl-4 font-semibold text-primary-foreground shadow-[0_12px_32px_-8px_rgb(255_148_85/0.7)] transition-all hover:-translate-y-0.5 hover:bg-brand-deep md:right-8 md:bottom-8"
+          className="no-print group fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 flex items-center justify-center gap-2 rounded-2xl bg-primary max-sm:size-14 sm:py-3.5 sm:pr-5 sm:pl-4 font-semibold text-primary-foreground shadow-[0_12px_32px_-8px_rgb(255_148_85/0.7)] transition-all hover:-translate-y-0.5 hover:bg-brand-deep md:right-8 md:bottom-8"
         >
           <Plus className="size-5" strokeWidth={2.5} />
           <span className="max-sm:sr-only">Add expense</span>
