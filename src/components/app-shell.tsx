@@ -34,6 +34,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { stopped, setStopped } = useAppPresence(launched);
   useNativeShell(info.native, theme);
 
+  // The on-screen keyboard shrinks the window: keep the field being typed in visible (e.g. at the
+  // bottom of a long sheet).
+  useEffect(() => {
+    let timers: number[] = [];
+    const reveal = () => {
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && el.matches("input, textarea, select, [contenteditable]")) el.scrollIntoView({ block: "nearest" });
+    };
+    // Sheets sized in dvh settle a moment after the resize event, so look again shortly after.
+    const onResize = () => {
+      timers.forEach(clearTimeout);
+      timers = [50, 300].map((ms) => window.setTimeout(reveal, ms));
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      timers.forEach(clearTimeout);
+    };
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;

@@ -29,6 +29,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // The on-screen keyboard shrinks the page (Chrome), so bottom sheets sit above it, not behind it.
+  interactiveWidget: "resizes-content",
 };
 
 // Paint in the last-used theme before React loads (no flash of the wrong theme).

@@ -39,8 +39,9 @@ export function PeopleDialog({
   const addNew = async () => {
     const n = name.trim();
     if (!n) return;
-    await run({ type: "add-participant", name: n }, `${n} added`).catch(() => {});
+    // Clear straight away so the next name can be typed while this one saves; put it back if it fails.
     setName("");
+    await run({ type: "add-participant", name: n }, `${n} added`).catch(() => setName((cur) => cur || n));
   };
 
   return (
@@ -99,7 +100,13 @@ export function PeopleDialog({
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addNew())}
                 placeholder="New person's name"
               />
-              <Button className="h-10 rounded-xl" onClick={addNew} disabled={!name.trim()}>
+              <Button
+                className="h-10 rounded-xl"
+                // Keep the field focused (and the keyboard open) to add several people in a row.
+                onPointerDown={(e) => e.pointerType !== "mouse" && e.preventDefault()}
+                onClick={addNew}
+                disabled={!name.trim()}
+              >
                 <Plus /> Add
               </Button>
             </div>

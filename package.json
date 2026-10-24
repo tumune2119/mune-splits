@@ -1,6 +1,6 @@
 {
   "name": "mune-splits",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Local-first expense splitter: log who paid for what and settle up with the fewest payments.",
   "license": "MIT",
   "private": true,
