@@ -20,6 +20,25 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["better-sqlite3"],
   poweredByHeader: false,
   env: { NEXT_PUBLIC_APP_VERSION: version },
+  // Desktop server: no framing by other sites (clickjacking), no MIME sniffing, no device features.
+  // (The static phone/web build can't send headers; GitHub Pages serves it.)
+  ...(target !== "local"
+    ? {
+        headers: async () => [
+          {
+            source: "/:path*",
+            headers: [
+              { key: "X-Content-Type-Options", value: "nosniff" },
+              { key: "X-Frame-Options", value: "DENY" },
+              { key: "Content-Security-Policy", value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'" },
+              { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+              { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+              { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+            ],
+          },
+        ],
+      }
+    : {}),
   ...(target === "release"
     ? {
         output: "standalone" as const,

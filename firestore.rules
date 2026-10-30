@@ -2,7 +2,8 @@ rules_version = '2';
 
 // MUNE Splits shared events. There are no accounts: an event's id is a 24-character random secret that
 // only travels inside its invite link, so knowing the id is what grants access. Nobody can list or
-// search events, and documents must keep the shape the app writes.
+// search events, and documents must keep the shape the app writes. Size limits are well above what
+// the app's fields allow; they only stop junk from filling an event.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -10,12 +11,39 @@ service cloud.firestore {
       return id.size() >= 20 && id.size() <= 64;
     }
 
+    function shortText(d, key, max) {
+      return !(key in d) || d[key] == null || (d[key] is string && d[key].size() <= max);
+    }
+
     function validEvent(d) {
       return d.keys().hasAll(['v', 'name', 'currency', 'people', 'status', 'createdAt', 'updatedAt'])
+        && d.keys().size() <= 20
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
         && d.currency is string && d.currency.size() == 3
         && d.people is list && d.people.size() <= 100
-        && d.status in ['active', 'settled', 'archived'];
+        && d.status in ['active', 'settled', 'archived']
+        && shortText(d, 'description', 2000)
+        && shortText(d, 'emoji', 16)
+        && shortText(d, 'color', 32);
+    }
+
+    function validExpense(d) {
+      return d.keys().size() <= 20
+        && d.amount is int && d.amount > 0 && d.amount <= 100000000000000
+        && d.title is string && d.title.size() <= 160
+        && d.payers is list && d.payers.size() >= 1 && d.payers.size() <= 100
+        && d.split is list && d.split.size() <= 100
+        && shortText(d, 'notes', 5000)
+        && shortText(d, 'category', 40)
+        && shortText(d, 'receipt', 200);
+    }
+
+    function validSettlement(d) {
+      return d.keys().size() <= 12
+        && d.amount is int && d.amount > 0 && d.amount <= 100000000000000
+        && d.fromId is string && d.fromId.size() <= 64
+        && d.toId is string && d.toId.size() <= 64
+        && shortText(d, 'note', 1000);
     }
 
     match /events/{eventId} {
@@ -28,25 +56,22 @@ service cloud.firestore {
       match /expenses/{id} {
         allow read: if validId(eventId);
         allow delete: if validId(eventId);
-        allow write: if validId(eventId)
-          && request.resource.data.amount is int && request.resource.data.amount > 0
-          && request.resource.data.title is string && request.resource.data.title.size() <= 160
-          && request.resource.data.payers is list && request.resource.data.split is list;
+        allow write: if validId(eventId) && id.size() <= 64 && validExpense(request.resource.data);
       }
 
       match /settlements/{id} {
         allow read: if validId(eventId);
         allow delete: if validId(eventId);
-        allow write: if validId(eventId)
-          && request.resource.data.amount is int && request.resource.data.amount > 0
-          && request.resource.data.fromId is string && request.resource.data.toId is string;
+        allow write: if validId(eventId) && id.size() <= 64 && validSettlement(request.resource.data);
       }
 
       match /receipts/{name} {
         allow read: if validId(eventId);
         allow delete: if validId(eventId);
-        allow create: if validId(eventId)
+        // Receipts are small JPEGs; Firestore caps a document at 1 MiB anyway.
+        allow create: if validId(eventId) && name.size() <= 120
           && request.resource.data.data is string
+          && request.resource.data.data.size() <= 1000000
           && request.resource.data.data.matches('^data:(image/(jpeg|png|webp|gif|heic)|application/pdf);base64,.*');
       }
     }
